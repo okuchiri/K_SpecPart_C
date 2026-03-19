@@ -1,0 +1,3 @@
+/home/norising/K_SpecPart_C/build/CMakeFiles/K_SpecPart.dir
+/home/norising/K_SpecPart_C/build/CMakeFiles/edit_cache.dir
+/home/norising/K_SpecPart_C/build/CMakeFiles/rebuild_cache.dir
