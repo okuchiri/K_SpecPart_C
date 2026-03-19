@@ -253,13 +253,3 @@ cycle_weight = hyperedge_weight / (cycles * 2 * scale)
 
 - 当前文档描述的是当前 C++ 实现的精确行为
 - 是否与 Julia 版每个权重细节完全一致，后续还需要继续逐行比对确认
-
-## 适合汇报时的简述
-
-可以把 `graphification.cpp` 概括成：
-
-- 输入一个带顶点权重和超边权重的超图
-- 按超边大小把它近似成普通加权图
-- 小超边直接变成边或三角形
-- 大超边用随机 cycle 方式近似
-- 输出用于谱嵌入的 `WeightedGraph`
