@@ -331,13 +331,3 @@ result.clusters = clusters;
 
 - 当前 C++ 版实现的是基础 overlay 版本
 - 后续如要完全对齐 Julia 版，还需要继续核对 cluster 构造和 coarse partition 细节
-
-## 适合汇报时的简述
-
-可以把 `overlay.cpp` 概括成：
-
-- 输入多组候选 partition
-- 收集所有被切开的超边
-- 把这些超边看作 cluster 边界
-- 在剩余超边诱导的连通关系上形成 cluster
-- 再把超图收缩成 coarse hypergraph，供下一轮更小规模分区使用
