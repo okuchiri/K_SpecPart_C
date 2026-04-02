@@ -72,10 +72,24 @@ include CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/codegen:
 .PHONY : CMakeFiles/K_SpecPart.dir/codegen
 
+CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o: /home/norising/K_SpecPart_C/src/cut_distillation.cpp
+CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o -c /home/norising/K_SpecPart_C/src/cut_distillation.cpp
+
+CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/cut_distillation.cpp > CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/cut_distillation.cpp -o CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.s
+
 CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o: /home/norising/K_SpecPart_C/src/embedding.cpp
 CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o -c /home/norising/K_SpecPart_C/src/embedding.cpp
 
 CMakeFiles/K_SpecPart.dir/src/embedding.cpp.i: cmake_force
@@ -86,10 +100,24 @@ CMakeFiles/K_SpecPart.dir/src/embedding.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/embedding.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/embedding.cpp -o CMakeFiles/K_SpecPart.dir/src/embedding.cpp.s
 
+CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o: /home/norising/K_SpecPart_C/src/external_tools.cpp
+CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o -c /home/norising/K_SpecPart_C/src/external_tools.cpp
+
+CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/external_tools.cpp > CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/external_tools.cpp -o CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.s
+
 CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o: /home/norising/K_SpecPart_C/src/golden_evaluator.cpp
 CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o -c /home/norising/K_SpecPart_C/src/golden_evaluator.cpp
 
 CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.i: cmake_force
@@ -103,7 +131,7 @@ CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.s: cmake_force
 CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o: /home/norising/K_SpecPart_C/src/graphification.cpp
 CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o -c /home/norising/K_SpecPart_C/src/graphification.cpp
 
 CMakeFiles/K_SpecPart.dir/src/graphification.cpp.i: cmake_force
@@ -117,7 +145,7 @@ CMakeFiles/K_SpecPart.dir/src/graphification.cpp.s: cmake_force
 CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o: /home/norising/K_SpecPart_C/src/hypergraph.cpp
 CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o -c /home/norising/K_SpecPart_C/src/hypergraph.cpp
 
 CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.i: cmake_force
@@ -131,7 +159,7 @@ CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.s: cmake_force
 CMakeFiles/K_SpecPart.dir/src/io.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/io.cpp.o: /home/norising/K_SpecPart_C/src/io.cpp
 CMakeFiles/K_SpecPart.dir/src/io.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/K_SpecPart.dir/src/io.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/K_SpecPart.dir/src/io.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/io.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/io.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/io.cpp.o -c /home/norising/K_SpecPart_C/src/io.cpp
 
 CMakeFiles/K_SpecPart.dir/src/io.cpp.i: cmake_force
@@ -145,7 +173,7 @@ CMakeFiles/K_SpecPart.dir/src/io.cpp.s: cmake_force
 CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o: /home/norising/K_SpecPart_C/src/isolate_islands.cpp
 CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o -c /home/norising/K_SpecPart_C/src/isolate_islands.cpp
 
 CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.i: cmake_force
@@ -159,7 +187,7 @@ CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.s: cmake_force
 CMakeFiles/K_SpecPart.dir/src/main.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/main.cpp.o: /home/norising/K_SpecPart_C/src/main.cpp
 CMakeFiles/K_SpecPart.dir/src/main.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/K_SpecPart.dir/src/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/K_SpecPart.dir/src/main.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/main.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/main.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/main.cpp.o -c /home/norising/K_SpecPart_C/src/main.cpp
 
 CMakeFiles/K_SpecPart.dir/src/main.cpp.i: cmake_force
@@ -170,10 +198,38 @@ CMakeFiles/K_SpecPart.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/main.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/main.cpp -o CMakeFiles/K_SpecPart.dir/src/main.cpp.s
 
+CMakeFiles/K_SpecPart.dir/src/metis.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/metis.cpp.o: /home/norising/K_SpecPart_C/src/metis.cpp
+CMakeFiles/K_SpecPart.dir/src/metis.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/K_SpecPart.dir/src/metis.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/metis.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/metis.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/metis.cpp.o -c /home/norising/K_SpecPart_C/src/metis.cpp
+
+CMakeFiles/K_SpecPart.dir/src/metis.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/metis.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/metis.cpp > CMakeFiles/K_SpecPart.dir/src/metis.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/metis.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/metis.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/metis.cpp -o CMakeFiles/K_SpecPart.dir/src/metis.cpp.s
+
+CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o: /home/norising/K_SpecPart_C/src/optimal_partitioner.cpp
+CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o -c /home/norising/K_SpecPart_C/src/optimal_partitioner.cpp
+
+CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/optimal_partitioner.cpp > CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/optimal_partitioner.cpp -o CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.s
+
 CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o: /home/norising/K_SpecPart_C/src/overlay.cpp
 CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o -c /home/norising/K_SpecPart_C/src/overlay.cpp
 
 CMakeFiles/K_SpecPart.dir/src/overlay.cpp.i: cmake_force
@@ -184,10 +240,24 @@ CMakeFiles/K_SpecPart.dir/src/overlay.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/overlay.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/overlay.cpp -o CMakeFiles/K_SpecPart.dir/src/overlay.cpp.s
 
+CMakeFiles/K_SpecPart.dir/src/projection.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/projection.cpp.o: /home/norising/K_SpecPart_C/src/projection.cpp
+CMakeFiles/K_SpecPart.dir/src/projection.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/K_SpecPart.dir/src/projection.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/projection.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/projection.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/projection.cpp.o -c /home/norising/K_SpecPart_C/src/projection.cpp
+
+CMakeFiles/K_SpecPart.dir/src/projection.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/projection.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/projection.cpp > CMakeFiles/K_SpecPart.dir/src/projection.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/projection.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/projection.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/projection.cpp -o CMakeFiles/K_SpecPart.dir/src/projection.cpp.s
+
 CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
 CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o: /home/norising/K_SpecPart_C/src/specpart.cpp
 CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o -c /home/norising/K_SpecPart_C/src/specpart.cpp
 
 CMakeFiles/K_SpecPart.dir/src/specpart.cpp.i: cmake_force
@@ -198,33 +268,91 @@ CMakeFiles/K_SpecPart.dir/src/specpart.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/specpart.cpp.s"
 	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/specpart.cpp -o CMakeFiles/K_SpecPart.dir/src/specpart.cpp.s
 
+CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o: /home/norising/K_SpecPart_C/src/lsst.cpp
+CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o -c /home/norising/K_SpecPart_C/src/lsst.cpp
+
+CMakeFiles/K_SpecPart.dir/src/lsst.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/lsst.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/lsst.cpp > CMakeFiles/K_SpecPart.dir/src/lsst.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/lsst.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/lsst.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/lsst.cpp -o CMakeFiles/K_SpecPart.dir/src/lsst.cpp.s
+
+CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o: /home/norising/K_SpecPart_C/src/triton_refiner.cpp
+CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o -c /home/norising/K_SpecPart_C/src/triton_refiner.cpp
+
+CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/triton_refiner.cpp > CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/triton_refiner.cpp -o CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.s
+
+CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o: CMakeFiles/K_SpecPart.dir/flags.make
+CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o: /home/norising/K_SpecPart_C/src/tree_partition.cpp
+CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o: CMakeFiles/K_SpecPart.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o -MF CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o.d -o CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o -c /home/norising/K_SpecPart_C/src/tree_partition.cpp
+
+CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.i"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/norising/K_SpecPart_C/src/tree_partition.cpp > CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.i
+
+CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.s"
+	/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/norising/K_SpecPart_C/src/tree_partition.cpp -o CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.s
+
 # Object files for target K_SpecPart
 K_SpecPart_OBJECTS = \
+"CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/io.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/main.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/metis.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o" \
 "CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o" \
-"CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o"
+"CMakeFiles/K_SpecPart.dir/src/projection.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o" \
+"CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o"
 
 # External object files for target K_SpecPart
 K_SpecPart_EXTERNAL_OBJECTS =
 
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/golden_evaluator.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/graphification.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/hypergraph.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/io.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/main.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/metis.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/projection.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o
+K_SpecPart: CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o
 K_SpecPart: CMakeFiles/K_SpecPart.dir/build.make
 K_SpecPart: CMakeFiles/K_SpecPart.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable K_SpecPart"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/norising/K_SpecPart_C/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Linking CXX executable K_SpecPart"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/K_SpecPart.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

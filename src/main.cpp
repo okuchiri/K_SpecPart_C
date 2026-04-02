@@ -20,7 +20,20 @@ void print_usage(const char* program) {
         << "  --solver-iters <int>      Default: 40\n"
         << "  --best-solns <int>        Default: 3\n"
         << "  --ncycles <int>           Default: 1\n"
-        << "  --seed <int>              Default: 0\n";
+        << "  --seed <int>              Default: 0\n"
+        << "  --projection-strategy <name>\n"
+        << "                            k-way embedding reduction: lda|random|projection|leading\n"
+        << "                            Default: lda\n"
+        << "  --hmetis <path>           Optional hMETIS executable or directory\n"
+        << "  --ilp-partitioner <path>  Optional ILP partitioner executable\n"
+        << "  --triton-refiner <path>   Optional OpenROAD/Triton refiner executable\n"
+        << "  --disable-optimal-partitioner\n"
+        << "                            Skip ILP/hMETIS overlay partitioning\n"
+        << "  --disable-hmetis          Keep overlay partitioning enabled but skip hMETIS\n"
+        << "  --disable-ilp            Keep overlay partitioning enabled but skip ILP\n"
+        << "  --disable-triton-refiner  Skip external Triton/OpenROAD refinement\n"
+        << "  --gpmetis <path>          Optional gpmetis executable or directory\n"
+        << "  --disable-metis           Skip METIS tree candidates\n";
 }
 
 }  // namespace

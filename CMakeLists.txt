@@ -7,17 +7,26 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Eigen3 REQUIRED)
+find_package(Threads REQUIRED)
 
 add_executable(K_SpecPart
+    src/cut_distillation.cpp
     src/embedding.cpp
+    src/external_tools.cpp
     src/golden_evaluator.cpp
     src/graphification.cpp
     src/hypergraph.cpp
     src/io.cpp
     src/isolate_islands.cpp
     src/main.cpp
+    src/metis.cpp
+    src/optimal_partitioner.cpp
     src/overlay.cpp
+    src/projection.cpp
     src/specpart.cpp
+    src/lsst.cpp
+    src/triton_refiner.cpp
+    src/tree_partition.cpp
 )
 
 target_include_directories(K_SpecPart
@@ -28,6 +37,7 @@ target_include_directories(K_SpecPart
 target_link_libraries(K_SpecPart
     PRIVATE
         Eigen3::Eigen
+        Threads::Threads
 )
 
 target_compile_options(K_SpecPart

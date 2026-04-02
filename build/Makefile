@@ -129,6 +129,30 @@ K_SpecPart/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/build
 .PHONY : K_SpecPart/fast
 
+src/cut_distillation.o: src/cut_distillation.cpp.o
+.PHONY : src/cut_distillation.o
+
+# target to build an object file
+src/cut_distillation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o
+.PHONY : src/cut_distillation.cpp.o
+
+src/cut_distillation.i: src/cut_distillation.cpp.i
+.PHONY : src/cut_distillation.i
+
+# target to preprocess a source file
+src/cut_distillation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.i
+.PHONY : src/cut_distillation.cpp.i
+
+src/cut_distillation.s: src/cut_distillation.cpp.s
+.PHONY : src/cut_distillation.s
+
+# target to generate assembly for a file
+src/cut_distillation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.s
+.PHONY : src/cut_distillation.cpp.s
+
 src/embedding.o: src/embedding.cpp.o
 .PHONY : src/embedding.o
 
@@ -152,6 +176,30 @@ src/embedding.s: src/embedding.cpp.s
 src/embedding.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/embedding.cpp.s
 .PHONY : src/embedding.cpp.s
+
+src/external_tools.o: src/external_tools.cpp.o
+.PHONY : src/external_tools.o
+
+# target to build an object file
+src/external_tools.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o
+.PHONY : src/external_tools.cpp.o
+
+src/external_tools.i: src/external_tools.cpp.i
+.PHONY : src/external_tools.i
+
+# target to preprocess a source file
+src/external_tools.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.i
+.PHONY : src/external_tools.cpp.i
+
+src/external_tools.s: src/external_tools.cpp.s
+.PHONY : src/external_tools.s
+
+# target to generate assembly for a file
+src/external_tools.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.s
+.PHONY : src/external_tools.cpp.s
 
 src/golden_evaluator.o: src/golden_evaluator.cpp.o
 .PHONY : src/golden_evaluator.o
@@ -273,6 +321,30 @@ src/isolate_islands.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/isolate_islands.cpp.s
 .PHONY : src/isolate_islands.cpp.s
 
+src/lsst.o: src/lsst.cpp.o
+.PHONY : src/lsst.o
+
+# target to build an object file
+src/lsst.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o
+.PHONY : src/lsst.cpp.o
+
+src/lsst.i: src/lsst.cpp.i
+.PHONY : src/lsst.i
+
+# target to preprocess a source file
+src/lsst.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/lsst.cpp.i
+.PHONY : src/lsst.cpp.i
+
+src/lsst.s: src/lsst.cpp.s
+.PHONY : src/lsst.s
+
+# target to generate assembly for a file
+src/lsst.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/lsst.cpp.s
+.PHONY : src/lsst.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -296,6 +368,54 @@ src/main.s: src/main.cpp.s
 src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
+
+src/metis.o: src/metis.cpp.o
+.PHONY : src/metis.o
+
+# target to build an object file
+src/metis.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/metis.cpp.o
+.PHONY : src/metis.cpp.o
+
+src/metis.i: src/metis.cpp.i
+.PHONY : src/metis.i
+
+# target to preprocess a source file
+src/metis.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/metis.cpp.i
+.PHONY : src/metis.cpp.i
+
+src/metis.s: src/metis.cpp.s
+.PHONY : src/metis.s
+
+# target to generate assembly for a file
+src/metis.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/metis.cpp.s
+.PHONY : src/metis.cpp.s
+
+src/optimal_partitioner.o: src/optimal_partitioner.cpp.o
+.PHONY : src/optimal_partitioner.o
+
+# target to build an object file
+src/optimal_partitioner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o
+.PHONY : src/optimal_partitioner.cpp.o
+
+src/optimal_partitioner.i: src/optimal_partitioner.cpp.i
+.PHONY : src/optimal_partitioner.i
+
+# target to preprocess a source file
+src/optimal_partitioner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.i
+.PHONY : src/optimal_partitioner.cpp.i
+
+src/optimal_partitioner.s: src/optimal_partitioner.cpp.s
+.PHONY : src/optimal_partitioner.s
+
+# target to generate assembly for a file
+src/optimal_partitioner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.s
+.PHONY : src/optimal_partitioner.cpp.s
 
 src/overlay.o: src/overlay.cpp.o
 .PHONY : src/overlay.o
@@ -321,6 +441,30 @@ src/overlay.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/overlay.cpp.s
 .PHONY : src/overlay.cpp.s
 
+src/projection.o: src/projection.cpp.o
+.PHONY : src/projection.o
+
+# target to build an object file
+src/projection.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/projection.cpp.o
+.PHONY : src/projection.cpp.o
+
+src/projection.i: src/projection.cpp.i
+.PHONY : src/projection.i
+
+# target to preprocess a source file
+src/projection.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/projection.cpp.i
+.PHONY : src/projection.cpp.i
+
+src/projection.s: src/projection.cpp.s
+.PHONY : src/projection.s
+
+# target to generate assembly for a file
+src/projection.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/projection.cpp.s
+.PHONY : src/projection.cpp.s
+
 src/specpart.o: src/specpart.cpp.o
 .PHONY : src/specpart.o
 
@@ -345,6 +489,54 @@ src/specpart.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/specpart.cpp.s
 .PHONY : src/specpart.cpp.s
 
+src/tree_partition.o: src/tree_partition.cpp.o
+.PHONY : src/tree_partition.o
+
+# target to build an object file
+src/tree_partition.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o
+.PHONY : src/tree_partition.cpp.o
+
+src/tree_partition.i: src/tree_partition.cpp.i
+.PHONY : src/tree_partition.i
+
+# target to preprocess a source file
+src/tree_partition.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.i
+.PHONY : src/tree_partition.cpp.i
+
+src/tree_partition.s: src/tree_partition.cpp.s
+.PHONY : src/tree_partition.s
+
+# target to generate assembly for a file
+src/tree_partition.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.s
+.PHONY : src/tree_partition.cpp.s
+
+src/triton_refiner.o: src/triton_refiner.cpp.o
+.PHONY : src/triton_refiner.o
+
+# target to build an object file
+src/triton_refiner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o
+.PHONY : src/triton_refiner.cpp.o
+
+src/triton_refiner.i: src/triton_refiner.cpp.i
+.PHONY : src/triton_refiner.i
+
+# target to preprocess a source file
+src/triton_refiner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.i
+.PHONY : src/triton_refiner.cpp.i
+
+src/triton_refiner.s: src/triton_refiner.cpp.s
+.PHONY : src/triton_refiner.s
+
+# target to generate assembly for a file
+src/triton_refiner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/K_SpecPart.dir/build.make CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.s
+.PHONY : src/triton_refiner.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -354,9 +546,15 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... K_SpecPart"
+	@echo "... src/cut_distillation.o"
+	@echo "... src/cut_distillation.i"
+	@echo "... src/cut_distillation.s"
 	@echo "... src/embedding.o"
 	@echo "... src/embedding.i"
 	@echo "... src/embedding.s"
+	@echo "... src/external_tools.o"
+	@echo "... src/external_tools.i"
+	@echo "... src/external_tools.s"
 	@echo "... src/golden_evaluator.o"
 	@echo "... src/golden_evaluator.i"
 	@echo "... src/golden_evaluator.s"
@@ -372,15 +570,33 @@ help:
 	@echo "... src/isolate_islands.o"
 	@echo "... src/isolate_islands.i"
 	@echo "... src/isolate_islands.s"
+	@echo "... src/lsst.o"
+	@echo "... src/lsst.i"
+	@echo "... src/lsst.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/metis.o"
+	@echo "... src/metis.i"
+	@echo "... src/metis.s"
+	@echo "... src/optimal_partitioner.o"
+	@echo "... src/optimal_partitioner.i"
+	@echo "... src/optimal_partitioner.s"
 	@echo "... src/overlay.o"
 	@echo "... src/overlay.i"
 	@echo "... src/overlay.s"
+	@echo "... src/projection.o"
+	@echo "... src/projection.i"
+	@echo "... src/projection.s"
 	@echo "... src/specpart.o"
 	@echo "... src/specpart.i"
 	@echo "... src/specpart.s"
+	@echo "... src/tree_partition.o"
+	@echo "... src/tree_partition.i"
+	@echo "... src/tree_partition.s"
+	@echo "... src/triton_refiner.o"
+	@echo "... src/triton_refiner.i"
+	@echo "... src/triton_refiner.s"
 .PHONY : help
 
 

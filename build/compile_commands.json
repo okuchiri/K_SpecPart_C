@@ -1,9 +1,21 @@
 [
 {
   "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o -c /home/norising/K_SpecPart_C/src/cut_distillation.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/cut_distillation.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/cut_distillation.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
   "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o -c /home/norising/K_SpecPart_C/src/embedding.cpp",
   "file": "/home/norising/K_SpecPart_C/src/embedding.cpp",
   "output": "CMakeFiles/K_SpecPart.dir/src/embedding.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o -c /home/norising/K_SpecPart_C/src/external_tools.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/external_tools.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/external_tools.cpp.o"
 },
 {
   "directory": "/home/norising/K_SpecPart_C/build",
@@ -43,14 +55,50 @@
 },
 {
   "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/metis.cpp.o -c /home/norising/K_SpecPart_C/src/metis.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/metis.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/metis.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o -c /home/norising/K_SpecPart_C/src/optimal_partitioner.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/optimal_partitioner.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/optimal_partitioner.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
   "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o -c /home/norising/K_SpecPart_C/src/overlay.cpp",
   "file": "/home/norising/K_SpecPart_C/src/overlay.cpp",
   "output": "CMakeFiles/K_SpecPart.dir/src/overlay.cpp.o"
 },
 {
   "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/projection.cpp.o -c /home/norising/K_SpecPart_C/src/projection.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/projection.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/projection.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
   "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o -c /home/norising/K_SpecPart_C/src/specpart.cpp",
   "file": "/home/norising/K_SpecPart_C/src/specpart.cpp",
   "output": "CMakeFiles/K_SpecPart.dir/src/specpart.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o -c /home/norising/K_SpecPart_C/src/lsst.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/lsst.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/lsst.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o -c /home/norising/K_SpecPart_C/src/triton_refiner.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/triton_refiner.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/triton_refiner.cpp.o"
+},
+{
+  "directory": "/home/norising/K_SpecPart_C/build",
+  "command": "/usr/bin/g++  -I/home/norising/K_SpecPart_C/include -isystem /usr/include/eigen3 -g -std=c++17 -Wall -Wextra -Wpedantic -o CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o -c /home/norising/K_SpecPart_C/src/tree_partition.cpp",
+  "file": "/home/norising/K_SpecPart_C/src/tree_partition.cpp",
+  "output": "CMakeFiles/K_SpecPart.dir/src/tree_partition.cpp.o"
 }
 ]

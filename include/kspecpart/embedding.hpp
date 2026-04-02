@@ -4,10 +4,18 @@
 
 #include <Eigen/Dense>
 
-#include <random>
-
 namespace kspecpart {
 
-Eigen::MatrixXd leading_eigenvectors(const WeightedGraph& graph, int requested_dims, int iterations, std::mt19937& rng);
+struct PartitionIndex;
+
+Eigen::MatrixXd solve_eigs(const Hypergraph& hypergraph,
+                           const WeightedGraph& graph,
+                           const PartitionIndex& pindex,
+                           bool largest,
+                           int requested_dims,
+                           int iterations,
+                           int epsilon = 1,
+                           int seed = 0,
+                           const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd());
 
 }  // namespace kspecpart

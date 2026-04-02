@@ -2,6 +2,7 @@
 
 #include "kspecpart/hypergraph.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -111,6 +112,28 @@ std::vector<int> read_partition_file(const std::string& file_name) {
         partition.push_back(std::stoi(line));
     }
     return partition;
+}
+
+void write_hypergraph_file(const std::string& file_name, const Hypergraph& hypergraph) {
+    std::ofstream output(file_name);
+    if (!output) {
+        throw std::runtime_error("failed to open hypergraph output file: " + file_name);
+    }
+
+    output << hypergraph.num_hyperedges << ' ' << hypergraph.num_vertices << " 11\n";
+    for (int edge = 0; edge < hypergraph.num_hyperedges; ++edge) {
+        output << hypergraph.hwts[edge];
+        for (int idx = hypergraph.eptr[edge]; idx < hypergraph.eptr[edge + 1]; ++idx) {
+            output << ' ' << (hypergraph.eind[idx] + 1);
+        }
+        output << '\n';
+    }
+
+    const bool has_heavy_vertex = !hypergraph.vwts.empty() &&
+                                  *std::max_element(hypergraph.vwts.begin(), hypergraph.vwts.end()) > 1;
+    for (int weight : hypergraph.vwts) {
+        output << (has_heavy_vertex ? weight + 1 : weight) << '\n';
+    }
 }
 
 void write_partition_file(const std::string& file_name, const std::vector<int>& partition) {
