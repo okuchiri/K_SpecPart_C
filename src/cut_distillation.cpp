@@ -35,15 +35,51 @@ std::vector<int> stable_unique_preserve_order(const std::vector<int>& values, in
     return unique_values;
 }
 
-std::vector<int> intersection_sorted(const std::vector<int>& lhs, const std::vector<int>& rhs) {
+std::vector<int> intersection_preserve_order(const std::vector<int>& lhs,
+                                             const std::vector<int>& rhs,
+                                             int domain_size) {
+    if (domain_size <= 0) {
+        return {};
+    }
+
+    std::vector<char> in_rhs(domain_size, 0);
+    for (int value : rhs) {
+        if (value >= 0 && value < domain_size) {
+            in_rhs[value] = 1;
+        }
+    }
+
     std::vector<int> result;
-    std::set_intersection(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), std::back_inserter(result));
+    result.reserve(std::min(lhs.size(), rhs.size()));
+    for (int value : lhs) {
+        if (value >= 0 && value < domain_size && in_rhs[value]) {
+            result.push_back(value);
+        }
+    }
     return result;
 }
 
-std::vector<int> difference_sorted(const std::vector<int>& lhs, const std::vector<int>& rhs) {
+std::vector<int> difference_preserve_order(const std::vector<int>& lhs,
+                                           const std::vector<int>& rhs,
+                                           int domain_size) {
+    if (domain_size <= 0) {
+        return {};
+    }
+
+    std::vector<char> in_rhs(domain_size, 0);
+    for (int value : rhs) {
+        if (value >= 0 && value < domain_size) {
+            in_rhs[value] = 1;
+        }
+    }
+
     std::vector<int> result;
-    std::set_difference(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), std::back_inserter(result));
+    result.reserve(lhs.size());
+    for (int value : lhs) {
+        if (value >= 0 && value < domain_size && !in_rhs[value]) {
+            result.push_back(value);
+        }
+    }
     return result;
 }
 
@@ -456,9 +492,10 @@ CutProfile distill_cuts_on_tree(const Hypergraph& hypergraph,
 
     std::vector<int> forced_0 = incident_edges(hypergraph, pindex.p1);
     std::vector<int> forced_1 = incident_edges(hypergraph, pindex.p2);
-    std::vector<int> forced_01 = intersection_sorted(forced_0, forced_1);
-    forced_0 = difference_sorted(forced_0, forced_01);
-    forced_1 = difference_sorted(forced_1, forced_01);
+    std::vector<int> forced_01 =
+        intersection_preserve_order(forced_0, forced_1, hypergraph.num_hyperedges);
+    forced_0 = difference_preserve_order(forced_0, forced_01, hypergraph.num_hyperedges);
+    forced_1 = difference_preserve_order(forced_1, forced_01, hypergraph.num_hyperedges);
 
     std::vector<int> forced_type(hypergraph.num_hyperedges, -1);
     for (int edge : forced_0) {

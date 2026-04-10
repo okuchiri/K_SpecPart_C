@@ -1,10 +1,10 @@
 #pragma once
 
 #include "kspecpart/definitions.hpp"
+#include "kspecpart/julia_random.hpp"
 
 #include <Eigen/Dense>
 
-#include <random>
 #include <string>
 #include <vector>
 
@@ -25,6 +25,7 @@ struct TreePartitionOptions {
     int cycles = 1;
     int best_solns = 3;
     int seed = 0;
+    bool log_lobpcg = false;
     ProjectionStrategy projection_strategy = ProjectionStrategy::kLda;
     std::string gpmetis_executable;
     bool enable_metis = true;
@@ -44,12 +45,12 @@ std::vector<int> local_refine_partition(const Hypergraph& hypergraph,
                                         std::vector<int> partition,
                                         int num_parts,
                                         const BalanceLimits& limits,
-                                        std::mt19937& rng);
+                                        AlgorithmRng& rng);
 
 std::vector<TreePartitionCandidate> tree_partition(const Hypergraph& hypergraph,
                                                    const TreePartitionOptions& options,
                                                    const std::vector<int>& base_partition,
-                                                   std::mt19937& rng,
+                                                   AlgorithmRng& rng,
                                                    const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd());
 
 std::vector<TreePartitionCandidate> tree_partition_with_embedding(const Hypergraph& hypergraph,
@@ -58,12 +59,12 @@ std::vector<TreePartitionCandidate> tree_partition_with_embedding(const Hypergra
                                                                   const PartitionIndex& fixed_vertices,
                                                                   const TreePartitionOptions& options,
                                                                   const std::vector<int>& base_partition,
-                                                                  std::mt19937& rng);
+                                                                  AlgorithmRng& rng);
 
 std::vector<int> tree_partition_best(const Hypergraph& hypergraph,
                                      const TreePartitionOptions& options,
                                      const std::vector<int>& base_partition,
-                                     std::mt19937& rng,
+                                     AlgorithmRng& rng,
                                      const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd());
 
 std::vector<int> tree_partition_best_with_embedding(const Hypergraph& hypergraph,
@@ -72,7 +73,7 @@ std::vector<int> tree_partition_best_with_embedding(const Hypergraph& hypergraph
                                                     const PartitionIndex& fixed_vertices,
                                                     const TreePartitionOptions& options,
                                                     const std::vector<int>& base_partition,
-                                                    std::mt19937& rng);
+                                                    AlgorithmRng& rng);
 
 std::vector<int> partition_two_way_hypergraph(const Hypergraph& hypergraph,
                                               int imb,
@@ -81,7 +82,7 @@ std::vector<int> partition_two_way_hypergraph(const Hypergraph& hypergraph,
                                               int cycles,
                                               int best_solns,
                                               const std::vector<int>& base_partition,
-                                              std::mt19937& rng,
+                                              AlgorithmRng& rng,
                                               const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd());
 
 std::vector<int> partition_k_way_hypergraph(const Hypergraph& hypergraph,
@@ -92,7 +93,7 @@ std::vector<int> partition_k_way_hypergraph(const Hypergraph& hypergraph,
                                             int cycles,
                                             int best_solns,
                                             const std::vector<int>& base_partition,
-                                            std::mt19937& rng,
+                                            AlgorithmRng& rng,
                                             ProjectionStrategy projection_strategy = ProjectionStrategy::kLda,
                                             const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd());
 

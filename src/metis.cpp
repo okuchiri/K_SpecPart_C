@@ -65,12 +65,15 @@ int count_undirected_edges(const WeightedGraph& graph) {
 }
 
 int metis_integer_weight(double weight) {
-    if (!std::isfinite(weight) || weight <= 0.0) {
-        return 1;
+    if (!std::isfinite(weight)) {
+        return 0;
+    }
+    if (weight <= 0.0) {
+        return 0;
     }
     const double floored = std::floor(weight);
-    if (floored < 1.0) {
-        return 1;
+    if (floored < 0.0) {
+        return 0;
     }
     if (floored > static_cast<double>(INT_MAX)) {
         return INT_MAX;
@@ -180,6 +183,15 @@ std::optional<std::string> resolve_gpmetis_executable(const std::string& configu
         return std::nullopt;
     }
 
+    const std::vector<std::filesystem::path> julia_aligned_candidates = {
+        "/home/fetzfs_projects/SpecPart/src/gpmetis",
+    };
+    for (const auto& candidate : julia_aligned_candidates) {
+        if (is_executable(candidate)) {
+            return candidate.string();
+        }
+    }
+
     const auto discovered = search_path_for_executable("gpmetis");
     if (!discovered.has_value()) {
         return std::nullopt;
@@ -193,6 +205,17 @@ std::optional<std::vector<int>> run_gpmetis_partition(const WeightedGraph& graph
                                                       int ufactor,
                                                       int seed) {
     if (graph.num_vertices <= 0 || num_parts <= 0) {
+        return std::nullopt;
+    }
+    if (num_parts >= graph.num_vertices) {
+        return std::nullopt;
+    }
+    if (graph.num_vertices < 3 * num_parts) {
+        // On very small trees with a large requested k, gpmetis can become
+        // disproportionately expensive and, in our environment, has triggered
+        // process-wide OOM kills. Julia's core algorithm does not rely on
+        // gpmetis here; it is only an auxiliary candidate generator, so we
+        // conservatively fall back to the internal tree-sweep candidates.
         return std::nullopt;
     }
 

@@ -250,6 +250,21 @@ IJVindGraph build_ijvind_graph_like_julia(const std::vector<AkpwEdge>& edges) {
     return {list2, colptr};
 }
 
+std::vector<int> build_cluster_colptr_like_julia(const std::vector<AkpwEdge>& edges, int num_vertices) {
+    std::vector<int> degree(num_vertices, 0);
+    for (const auto& edge : edges) {
+        assert(edge.j >= 0);
+        assert(edge.j < num_vertices);
+        ++degree[edge.j];
+    }
+
+    std::vector<int> colptr(num_vertices + 1, 0);
+    for (int vertex = 0; vertex < num_vertices; ++vertex) {
+        colptr[vertex + 1] = colptr[vertex] + degree[vertex];
+    }
+    return colptr;
+}
+
 std::vector<AkpwEdge> sort_ijvind_like_julia(const std::vector<AkpwEdge>& edges) {
     return build_ijvind_graph_like_julia(edges).list;
 }
@@ -369,12 +384,16 @@ void cluster_phase_like_julia(const std::vector<AkpwEdge>& current_edges,
 
     const int num_vertices = current_edges.back().j + 1;
     assert(current_edges.back().j >= current_edges.back().i);
-    assert(static_cast<int>(current_edges.size()) >= num_vertices);
     if (num_vertices <= 1) {
         return;
     }
 
-    const IJVindGraph ijv_graph = build_ijvind_graph_like_julia(current_edges);
+    // Julia's `cluster!` builds `colptr` directly from the sorted `curIJVind`
+    // list by counting `j`, then reuses that same list for Dijkstra traversal.
+    const IJVindGraph ijv_graph{
+        current_edges,
+        build_cluster_colptr_like_julia(current_edges, num_vertices),
+    };
     assert(static_cast<int>(ijv_graph.colptr.size()) == num_vertices + 1);
     std::vector<int> component(num_vertices, -1);
     int next_component = 0;
@@ -437,7 +456,7 @@ void expose_more_edges_like_julia(const std::vector<AkpwEdge>& original_edges,
 }
 
 double akpw_expansion_factor(int nleft) {
-    if (nleft <= 2) {
+    if (nleft <= 1) {
         return 1.0;
     }
     return 1.0 / (2.0 * std::log(static_cast<double>(nleft)));
@@ -471,7 +490,11 @@ WeightedGraph construct_akpw_lsst_tree(const WeightedGraph& graph, const Eigen::
 
     const std::vector<int> new_to_old = spectral_order(embedding, graph.num_vertices);
     const std::vector<int> old_to_new = inverse_permutation(new_to_old);
-    const AkpwInputState input_state = make_akpw_input_state_like_julia(graph, old_to_new);
+    // Julia's construct_tree(type=1) first relabels the graph with
+    // `sorted_vtx_ids[...]`, then maps the resulting LSST back with
+    // `reverse_map[...]`. That means the first permutation uses the
+    // sortperm vector itself rather than its inverse.
+    const AkpwInputState input_state = make_akpw_input_state_like_julia(graph, new_to_old);
     const std::vector<AkpwEdge>& findnz_edges = input_state.findnz_edges;
     const std::vector<AkpwEdge>& orig_list = input_state.orig_list;
     if (orig_list.empty()) {
@@ -510,7 +533,7 @@ WeightedGraph construct_akpw_lsst_tree(const WeightedGraph& graph, const Eigen::
         const int previous_tree_size = static_cast<int>(selected_tree_edges.size());
         const int previous_last = last;
 
-        const int nleft = std::max(2, n - previous_tree_size);
+        const int nleft = n - previous_tree_size;
         expansion_factor = akpw_expansion_factor(nleft);
 
         cluster_phase_like_julia(current_edges, expansion_factor, selected_tree_edges);
@@ -553,8 +576,8 @@ WeightedGraph construct_akpw_lsst_tree(const WeightedGraph& graph, const Eigen::
         const AkpwEdge& edge = findnz_edges[edge_index];
         if (tree_components.unite(edge.original_u, edge.original_v)) {
             add_undirected_edge(tree,
-                                new_to_old[edge.original_u],
-                                new_to_old[edge.original_v],
+                                old_to_new[edge.original_u],
+                                old_to_new[edge.original_v],
                                 std::max(edge.weight, 1e-6));
         }
     }
@@ -562,8 +585,8 @@ WeightedGraph construct_akpw_lsst_tree(const WeightedGraph& graph, const Eigen::
     for (const auto& edge : findnz_edges) {
         if (tree_components.unite(edge.original_u, edge.original_v)) {
             add_undirected_edge(tree,
-                                new_to_old[edge.original_u],
-                                new_to_old[edge.original_v],
+                                old_to_new[edge.original_u],
+                                old_to_new[edge.original_v],
                                 std::max(edge.weight, 1e-6));
         }
     }

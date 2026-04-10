@@ -48,6 +48,7 @@ struct SpecPartOptions {
     int best_solns = 3;
     int ncycles = 1;
     int seed = 0;
+    bool log_lobpcg = false;
     ProjectionStrategy projection_strategy = ProjectionStrategy::kLda;
     bool enable_optimal_partitioner = true;
     bool enable_hmetis_partitioner = true;

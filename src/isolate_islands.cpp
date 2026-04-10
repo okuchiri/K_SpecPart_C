@@ -59,17 +59,27 @@ std::pair<std::vector<int>, std::vector<int>> island_removal(
         }
     }
 
-    std::unordered_map<int, int> remap;
-    std::vector<int> clusters(hypergraph.num_vertices, -1);
-    std::vector<int> sizes;
+    std::vector<int> root_sizes(hypergraph.num_vertices, 0);
     for (int vertex = 0; vertex < hypergraph.num_vertices; ++vertex) {
         const int root = uf.find(vertex);
-        auto [it, inserted] = remap.emplace(root, static_cast<int>(remap.size()));
-        if (inserted) {
-            sizes.push_back(0);
+        root_sizes[root] += 1;
+    }
+
+    std::vector<int> root_to_cluster(hypergraph.num_vertices, -1);
+    std::vector<int> sizes;
+    sizes.reserve(hypergraph.num_vertices);
+    for (int root = 0; root < hypergraph.num_vertices; ++root) {
+        if (root_sizes[root] <= 0) {
+            continue;
         }
-        clusters[vertex] = it->second;
-        sizes[it->second] += 1;
+        root_to_cluster[root] = static_cast<int>(sizes.size());
+        sizes.push_back(root_sizes[root]);
+    }
+
+    std::vector<int> clusters(hypergraph.num_vertices, -1);
+    for (int vertex = 0; vertex < hypergraph.num_vertices; ++vertex) {
+        const int root = uf.find(vertex);
+        clusters[vertex] = root_to_cluster[root];
     }
 
     return {clusters, sizes};

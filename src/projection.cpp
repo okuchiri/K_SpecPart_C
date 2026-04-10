@@ -1,17 +1,21 @@
+#include "kspecpart/lapack_eigen.hpp"
 #include "kspecpart/projection.hpp"
 
 #include <Eigen/Eigenvalues>
 
 #include <algorithm>
+#include <cmath>
 #include <cctype>
+#include <map>
 #include <random>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace kspecpart {
 
 namespace {
+
+constexpr double kJuliaLdaRegcoef = 1.0e-6;
 
 int clamped_output_dims(const Eigen::MatrixXd& embedding, int target_dims) {
     return std::max(0, std::min(target_dims, static_cast<int>(embedding.cols())));
@@ -23,6 +27,129 @@ Eigen::MatrixXd leading_columns_projection(const Eigen::MatrixXd& embedding, int
         return Eigen::MatrixXd::Zero(embedding.rows(), 0);
     }
     return embedding.leftCols(dims);
+}
+
+std::vector<int> stable_descending_permutation(const Eigen::VectorXd& values) {
+    std::vector<int> permutation(values.size());
+    for (int index = 0; index < values.size(); ++index) {
+        permutation[index] = index;
+    }
+    std::stable_sort(permutation.begin(), permutation.end(), [&values](int lhs, int rhs) {
+        return values[lhs] > values[rhs];
+    });
+    return permutation;
+}
+
+void regularize_symmetric_in_place(Eigen::MatrixXd& matrix, double lambda) {
+    if (matrix.rows() == 0 || lambda <= 0.0) {
+        return;
+    }
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> solver(matrix);
+    if (solver.info() != Eigen::Success || solver.eigenvalues().size() == 0) {
+        return;
+    }
+    const double emax = solver.eigenvalues().maxCoeff();
+    if (emax == 0.0) {
+        return;
+    }
+    matrix.diagonal().array() += emax * lambda;
+}
+
+Eigen::MatrixXd julia_like_lda_fallback(const Eigen::MatrixXd& embedding, int target_dims) {
+    if (embedding.cols() <= 1) {
+        return leading_columns_projection(embedding, std::max(1, target_dims));
+    }
+    // Julia's k-way code keeps nearby alternatives (`projection(...)`,
+    // random projection, leading columns) around the LDA call site. When the
+    // labels do not define a meaningful discriminant problem, using the
+    // odd/even projection is a deterministic fallback that still compresses
+    // the concatenated embedding to the 2-D tree-partition input shape.
+    return projection(embedding);
+}
+
+bool solve_mclda_gevd(const Eigen::MatrixXd& sb,
+                      const Eigen::MatrixXd& sw,
+                      int output_dims,
+                      Eigen::MatrixXd& lda_projection) {
+    if (output_dims <= 0 || sb.rows() == 0 || sw.rows() == 0) {
+        return false;
+    }
+
+    std::optional<LapackEigenResult> solver =
+        lapack_generalized_symmetric_eigen(sb, sw);
+    if (!solver.has_value() || solver->eigenvalues.size() < output_dims) {
+        return false;
+    }
+
+    const std::vector<int> order = stable_descending_permutation(solver->eigenvalues);
+    lda_projection.resize(sb.rows(), output_dims);
+    for (int col = 0; col < output_dims; ++col) {
+        lda_projection.col(col) = solver->eigenvectors.col(order[col]);
+    }
+    return true;
+}
+
+bool solve_degenerate_mclda_gevd(const Eigen::MatrixXd& sw,
+                                 double regcoef,
+                                 int output_dims,
+                                 Eigen::MatrixXd& lda_projection) {
+    if (output_dims <= 0 || sw.rows() == 0 || sw.rows() != sw.cols()) {
+        return false;
+    }
+
+    Eigen::MatrixXd regularized_sw = sw;
+    regularize_symmetric_in_place(regularized_sw, regcoef);
+    Eigen::LLT<Eigen::MatrixXd> llt(regularized_sw);
+    if (llt.info() != Eigen::Success) {
+        return false;
+    }
+
+    const int dims = regularized_sw.rows();
+    const Eigen::MatrixXd identity = Eigen::MatrixXd::Identity(dims, dims);
+    const Eigen::MatrixXd upper_inverse = llt.matrixU().solve(identity);
+    lda_projection = upper_inverse.leftCols(std::min(output_dims, dims));
+    return lda_projection.cols() > 0;
+}
+
+bool solve_mclda_whiten(const Eigen::MatrixXd& sb,
+                        const Eigen::MatrixXd& sw,
+                        double regcoef,
+                        int output_dims,
+                        Eigen::MatrixXd& lda_projection) {
+    if (output_dims <= 0 || sb.rows() == 0 || sw.rows() == 0) {
+        return false;
+    }
+
+    std::optional<LapackEigenResult> sw_solver = lapack_symmetric_eigen(sw);
+    if (!sw_solver.has_value() || sw_solver->eigenvalues.size() == 0) {
+        return false;
+    }
+
+    Eigen::VectorXd eigenvalues = sw_solver->eigenvalues;
+    const double shift = regcoef > 0.0 ? regcoef * eigenvalues.maxCoeff() : 0.0;
+    for (int i = 0; i < eigenvalues.size(); ++i) {
+        const double regularized = eigenvalues[i] + shift;
+        if (!(regularized > 0.0) || !std::isfinite(regularized)) {
+            return false;
+        }
+        eigenvalues[i] = 1.0 / std::sqrt(regularized);
+    }
+
+    const Eigen::MatrixXd whitening =
+        sw_solver->eigenvectors * eigenvalues.asDiagonal();
+    const Eigen::MatrixXd whitened_sb = whitening.transpose() * (sb * whitening);
+
+    std::optional<LapackEigenResult> sb_solver = lapack_symmetric_eigen(whitened_sb);
+    if (!sb_solver.has_value() || sb_solver->eigenvalues.size() < output_dims) {
+        return false;
+    }
+
+    const std::vector<int> order = stable_descending_permutation(sb_solver->eigenvalues);
+    lda_projection.resize(sb.rows(), output_dims);
+    for (int col = 0; col < output_dims; ++col) {
+        lda_projection.col(col) = whitening * sb_solver->eigenvectors.col(order[col]);
+    }
+    return true;
 }
 
 std::string normalize_strategy_token(std::string token) {
@@ -130,50 +257,77 @@ Eigen::MatrixXd lda_reduce_embedding(const Eigen::MatrixXd& embedding,
                                      int target_dims) {
     if (embedding.rows() == 0 || embedding.cols() == 0 || target_dims <= 0 ||
         embedding.rows() != static_cast<int>(labels.size())) {
-        return embedding;
+        return julia_like_lda_fallback(embedding, target_dims);
     }
 
-    std::unordered_map<int, std::vector<int>> class_members;
-    for (int vertex = 0; vertex < static_cast<int>(labels.size()); ++vertex) {
-        if (labels[vertex] >= 0) {
-            class_members[labels[vertex]].push_back(vertex);
-        }
-    }
-    if (class_members.size() <= 1) {
-        return embedding.leftCols(std::min(target_dims, static_cast<int>(embedding.cols())));
+    std::map<int, int> class_index;
+    for (int label : labels) {
+        class_index.emplace(label, static_cast<int>(class_index.size()));
     }
 
     const int dims = embedding.cols();
-    Eigen::RowVectorXd overall_mean = embedding.colwise().mean();
+    const int requested_dims = std::min(target_dims, dims);
+    if (requested_dims <= 0) {
+        return julia_like_lda_fallback(embedding, target_dims);
+    }
+
+    const int num_classes = static_cast<int>(class_index.size());
+    Eigen::MatrixXd class_means = Eigen::MatrixXd::Zero(dims, num_classes);
+    std::vector<int> class_weights(num_classes, 0);
+    Eigen::MatrixXd centered = Eigen::MatrixXd::Zero(dims, embedding.rows());
+
+    std::vector<int> label_indices(labels.size(), 0);
+    for (int vertex = 0; vertex < static_cast<int>(labels.size()); ++vertex) {
+        const int class_id = class_index.find(labels[vertex])->second;
+        label_indices[vertex] = class_id;
+        class_means.col(class_id) += embedding.row(vertex).transpose();
+        class_weights[class_id] += 1;
+    }
+    for (int class_id = 0; class_id < num_classes; ++class_id) {
+        if (class_weights[class_id] > 0) {
+            class_means.col(class_id) /= static_cast<double>(class_weights[class_id]);
+        }
+    }
+    for (int vertex = 0; vertex < static_cast<int>(labels.size()); ++vertex) {
+        centered.col(vertex) =
+            embedding.row(vertex).transpose() - class_means.col(label_indices[vertex]);
+    }
+
     Eigen::MatrixXd sb = Eigen::MatrixXd::Zero(dims, dims);
     Eigen::MatrixXd sw = Eigen::MatrixXd::Zero(dims, dims);
-
-    for (const auto& [label, members] : class_members) {
-        (void)label;
-        if (members.empty()) {
-            continue;
-        }
-        Eigen::MatrixXd class_rows(members.size(), dims);
-        for (int row = 0; row < static_cast<int>(members.size()); ++row) {
-            class_rows.row(row) = embedding.row(members[row]);
-        }
-        const Eigen::RowVectorXd class_mean = class_rows.colwise().mean();
-        const Eigen::RowVectorXd diff = class_mean - overall_mean;
-        sb.noalias() += static_cast<double>(members.size()) * (diff.transpose() * diff);
-        Eigen::MatrixXd centered = class_rows.rowwise() - class_mean;
-        sw.noalias() += centered.transpose() * centered;
+    if (centered.cols() > 0) {
+        sw.noalias() = centered * centered.transpose();
     }
 
-    sw.diagonal().array() += 1e-9;
-    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> solver(sb, sw);
-    const int output_dims = std::min({target_dims, dims, std::max(1, static_cast<int>(class_members.size()) - 1)});
-    if (output_dims <= 0 || solver.info() != Eigen::Success) {
-        return embedding.leftCols(std::min(target_dims, dims));
+    Eigen::VectorXd class_weight_vector(class_means.cols());
+    for (int class_id = 0; class_id < class_means.cols(); ++class_id) {
+        class_weight_vector(class_id) = static_cast<double>(class_weights[class_id]);
+    }
+    const double total_weight = class_weight_vector.sum();
+    Eigen::VectorXd overall_mean = Eigen::VectorXd::Zero(dims);
+    if (total_weight > 0.0 && class_means.cols() > 0) {
+        overall_mean.noalias() = class_means * (class_weight_vector / total_weight);
+    }
+    Eigen::MatrixXd centered_class_means = class_means.colwise() - overall_mean;
+    for (int class_id = 0; class_id < centered_class_means.cols(); ++class_id) {
+        centered_class_means.col(class_id) *= std::sqrt(std::max(0.0, class_weight_vector(class_id)));
+    }
+    if (centered_class_means.cols() > 0) {
+        sb.noalias() = centered_class_means * centered_class_means.transpose();
     }
 
-    Eigen::MatrixXd lda_projection(dims, output_dims);
-    for (int col = 0; col < output_dims; ++col) {
-        lda_projection.col(col) = solver.eigenvectors().col(dims - 1 - col);
+    const int output_dims = requested_dims;
+    if (output_dims <= 0) {
+        return julia_like_lda_fallback(embedding, requested_dims);
+    }
+
+    Eigen::MatrixXd lda_projection;
+    Eigen::MatrixXd regularized_sw = sw;
+    regularize_symmetric_in_place(regularized_sw, kJuliaLdaRegcoef);
+    if (!solve_mclda_gevd(sb, regularized_sw, output_dims, lda_projection) &&
+        !solve_mclda_whiten(sb, sw, kJuliaLdaRegcoef, output_dims, lda_projection) &&
+        !solve_degenerate_mclda_gevd(sw, kJuliaLdaRegcoef, output_dims, lda_projection)) {
+        return julia_like_lda_fallback(embedding, requested_dims);
     }
     return embedding * lda_projection;
 }

@@ -1,9 +1,12 @@
 #include "kspecpart/external_tools.hpp"
 
 #include <cstdlib>
+#include <cerrno>
+#include <fcntl.h>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <sys/wait.h>
 #include <unordered_set>
 #include <vector>
 
@@ -188,27 +191,56 @@ bool run_external_command(const ExternalCommand& command) {
         return false;
     }
 
-    std::string shell_command;
-    for (const auto& [name, value] : command.env) {
-        if (!name.empty() && !value.empty()) {
-            shell_command += name + "=" + shell_quote(value) + " ";
-        }
+    pid_t pid = ::fork();
+    if (pid < 0) {
+        return false;
     }
-    for (std::size_t i = 0; i < command.argv.size(); ++i) {
-        if (i > 0) {
-            shell_command += ' ';
+
+    if (pid == 0) {
+        for (const auto& [name, value] : command.env) {
+            if (!name.empty()) {
+                ::setenv(name.c_str(), value.c_str(), 1);
+            }
         }
-        shell_command += shell_quote(command.argv[i]);
-    }
-    if (command.stdout_file.has_value()) {
-        shell_command += " > " + shell_quote(*command.stdout_file);
+
+        int stdout_fd = -1;
+        if (command.stdout_file.has_value()) {
+            stdout_fd = ::open(command.stdout_file->c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
+            if (stdout_fd < 0) {
+                _exit(127);
+            }
+            if (::dup2(stdout_fd, STDOUT_FILENO) < 0) {
+                _exit(127);
+            }
+        }
+
         if (command.redirect_stderr_to_stdout) {
-            shell_command += " 2>&1";
+            if (::dup2(STDOUT_FILENO, STDERR_FILENO) < 0) {
+                _exit(127);
+            }
         }
-    } else if (command.redirect_stderr_to_stdout) {
-        shell_command += " 2>&1";
+
+        if (stdout_fd >= 0) {
+            ::close(stdout_fd);
+        }
+
+        std::vector<char*> argv;
+        argv.reserve(command.argv.size() + 1);
+        for (const std::string& arg : command.argv) {
+            argv.push_back(const_cast<char*>(arg.c_str()));
+        }
+        argv.push_back(nullptr);
+        ::execvp(argv[0], argv.data());
+        _exit(127);
     }
-    return std::system(shell_command.c_str()) == 0;
+
+    int status = 0;
+    while (::waitpid(pid, &status, 0) < 0) {
+        if (errno != EINTR) {
+            return false;
+        }
+    }
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 std::vector<std::string> discover_ortools_library_paths(const std::string& executable_path) {

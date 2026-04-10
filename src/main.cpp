@@ -21,6 +21,7 @@ void print_usage(const char* program) {
         << "  --best-solns <int>        Default: 3\n"
         << "  --ncycles <int>           Default: 1\n"
         << "  --seed <int>              Default: 0\n"
+        << "  --log-lobpcg              Print Julia-style LOBPCG summary/trace when used\n"
         << "  --projection-strategy <name>\n"
         << "                            k-way embedding reduction: lda|random|projection|leading\n"
         << "                            Default: lda\n"

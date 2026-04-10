@@ -15,10 +15,11 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <optional>
-#include <random>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -55,6 +56,103 @@ struct ExternalRuntimeContext {
     }
 };
 
+std::optional<std::filesystem::path> resolve_overlay_debug_dir() {
+    const char* raw = std::getenv("K_SPECPART_DEBUG_OVERLAY_DIR");
+    if (raw == nullptr || *raw == '\0') {
+        raw = std::getenv("K_SPECPART_DEBUG_EXTERNAL_DIR");
+    }
+    if (raw == nullptr || *raw == '\0') {
+        return std::nullopt;
+    }
+    std::filesystem::path dir(raw);
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        return std::nullopt;
+    }
+    return dir;
+}
+
+std::optional<std::filesystem::path> resolve_main_rng_debug_dir() {
+    const char* raw = std::getenv("K_SPECPART_DEBUG_MAIN_RNG_DIR");
+    if (raw == nullptr || *raw == '\0') {
+        return std::nullopt;
+    }
+    std::filesystem::path dir(raw);
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        return std::nullopt;
+    }
+    return dir;
+}
+
+bool stop_after_first_overlay_enabled() {
+    const char* raw = std::getenv("K_SPECPART_STOP_AFTER_FIRST_OVERLAY");
+    return raw != nullptr && *raw != '\0' && std::string(raw) != "0";
+}
+
+void dump_main_rng_state(const std::string& label, const AlgorithmRng& rng) {
+    const std::optional<std::filesystem::path> dir = resolve_main_rng_debug_dir();
+    if (!dir.has_value()) {
+        return;
+    }
+    const AlgorithmRng::State state = rng.state();
+    std::ofstream output(((*dir) / (label + ".txt")).string());
+    if (!output) {
+        return;
+    }
+    output << std::hex;
+    for (std::uint64_t word : state) {
+        output << word << '\n';
+    }
+}
+
+void emulate_julia_thread_loop_task_fork(AlgorithmRng& rng) {
+    (void)rng.fork_task_local();
+}
+
+void dump_overlay_debug_artifacts(const OverlayResult& overlaid,
+                                  const std::vector<std::vector<int>>& partitions,
+                                  int run_id) {
+    const std::optional<std::filesystem::path> dir = resolve_overlay_debug_dir();
+    if (!dir.has_value()) {
+        return;
+    }
+
+    const std::string prefix = "overlay-round-" + std::to_string(run_id);
+    write_hypergraph_file(((*dir) / (prefix + ".hgr")).string(), overlaid.hypergraph);
+    write_partition_file(((*dir) / (prefix + ".clusters")).string(), overlaid.clusters);
+    for (int index = 0; index < static_cast<int>(partitions.size()); ++index) {
+        write_partition_file(((*dir) / (prefix + ".input." + std::to_string(index) + ".part")).string(),
+                             partitions[index]);
+    }
+}
+
+void dump_embedding_debug_artifact(const Eigen::MatrixXd& embedding,
+                                   const std::string& label) {
+    const std::optional<std::filesystem::path> dir = resolve_overlay_debug_dir();
+    if (!dir.has_value()) {
+        return;
+    }
+    std::ofstream output(((*dir) / label).string());
+    if (!output) {
+        return;
+    }
+    output.setf(std::ios::scientific);
+    output.precision(17);
+    output << embedding.rows() << ' ' << embedding.cols() << '\n';
+    for (int row = 0; row < embedding.rows(); ++row) {
+        for (int col = 0; col < embedding.cols(); ++col) {
+            if (col > 0) {
+                output << ' ';
+            }
+            output << embedding(row, col);
+        }
+        output << '\n';
+    }
+}
+
 TreePartitionOptions make_tree_partition_options(const SpecPartOptions& options, int num_parts) {
     TreePartitionOptions tree_options;
     tree_options.num_parts = num_parts;
@@ -64,6 +162,7 @@ TreePartitionOptions make_tree_partition_options(const SpecPartOptions& options,
     tree_options.cycles = options.ncycles;
     tree_options.best_solns = options.best_solns;
     tree_options.seed = options.seed;
+    tree_options.log_lobpcg = options.log_lobpcg;
     tree_options.projection_strategy = options.projection_strategy;
     tree_options.gpmetis_executable = options.gpmetis_executable;
     tree_options.enable_metis = options.enable_metis;
@@ -151,33 +250,51 @@ Eigen::MatrixXd two_way_iteration_embedding(const Hypergraph& hypergraph,
                                             const WeightedGraph& graph,
                                             const std::vector<int>& partition,
                                             const SpecPartOptions& options,
-                                            const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd()) {
+                                            AlgorithmRng& rng,
+                                            const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd(),
+                                            const std::string& debug_label = "") {
     const PartitionIndex pindex = binary_partition_index(partition);
     const int dims = std::max(1, options.eigvecs);
     return solve_eigs(hypergraph, graph, pindex, false, dims, options.solver_iters, 1,
-                      options.seed, constraint_basis);
+                      options.seed, constraint_basis, options.log_lobpcg, &rng, debug_label);
 }
 
 Eigen::MatrixXd k_way_iteration_embedding(const Hypergraph& hypergraph,
                                           const WeightedGraph& graph,
                                           const std::vector<int>& partition,
                                           const SpecPartOptions& options,
-                                          const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd()) {
+                                          AlgorithmRng& rng,
+                                          const Eigen::MatrixXd& constraint_basis = Eigen::MatrixXd(),
+                                          const std::string& concat_debug_artifact = "",
+                                          const std::string& debug_iter_label = "") {
     const auto part_vertices = vertices_by_part(partition, options.num_parts);
     std::vector<Eigen::MatrixXd> embeddings;
     embeddings.reserve(options.num_parts);
     const int dims = std::max(1, options.eigvecs);
     const int epsilon = std::max(1, options.num_parts - 1);
+    // The Julia runner enters a single Threads.@threads loop here. Under the
+    // current reference environment (Threads.nthreads() == 1), that loop forks
+    // exactly one TaskLocalRNG child, and all part embeddings consume that one
+    // child stream sequentially. Forking once per part over-advances the parent
+    // split state and reproduces Julia's first x0 block only by accident.
+    AlgorithmRng task_rng = rng.fork_task_local();
     for (int part = 0; part < options.num_parts; ++part) {
         const PartitionIndex pindex = one_vs_rest_index(part_vertices, part);
         embeddings.push_back(
             solve_eigs(hypergraph, graph, pindex, false, dims, options.solver_iters, epsilon,
-                       options.seed, constraint_basis));
+                       options.seed, constraint_basis, options.log_lobpcg, &task_rng,
+                       debug_iter_label.empty()
+                           ? std::string()
+                           : (debug_iter_label + ".block-" + std::to_string(part + 1))));
     }
 
     Eigen::MatrixXd concatenated = concatenate_embeddings(embeddings, hypergraph.num_vertices);
     if (concatenated.cols() == 0) {
         return concatenated;
+    }
+    dump_embedding_debug_artifact(concatenated, "cpp-kway-concat-embedding.txt");
+    if (!concat_debug_artifact.empty()) {
+        dump_embedding_debug_artifact(concatenated, concat_debug_artifact);
     }
     return reduce_embedding_for_tree_partition(concatenated,
                                                partition,
@@ -189,12 +306,38 @@ Eigen::MatrixXd k_way_iteration_embedding(const Hypergraph& hypergraph,
 std::vector<int> initial_partition_for_processed(const Hypergraph& hypergraph,
                                                  const SpecPartOptions& options,
                                                  const std::vector<int>& hint,
-                                                 std::mt19937& rng) {
+                                                 AlgorithmRng& rng) {
     if (static_cast<int>(hint.size()) == hypergraph.num_vertices &&
         std::all_of(hint.begin(), hint.end(), [](int part) { return part >= 0; })) {
         return hint;
     }
+
+    if (options.num_parts > 2) {
+        // Julia's k-way entry does not build an initial tree partition when no
+        // hint is available. It starts refinement from the processed hint
+        // vector, which is effectively all zeros in the no-hint case, and only
+        // later reduces the concatenated embedding via LDA before calling
+        // tree_partition(...). Reusing that structure avoids exploding the
+        // candidate subset enumeration on the unreduced k-way embedding.
+        return std::vector<int>(hypergraph.num_vertices, 0);
+    }
+
     return tree_partition_best(hypergraph, make_tree_partition_options(options, options.num_parts), {}, rng);
+}
+
+std::optional<std::vector<int>> generate_initial_hmetis_hint(const Hypergraph& hypergraph,
+                                                             const SpecPartOptions& options,
+                                                             const std::optional<std::string>& resolved_hmetis,
+                                                             const std::string& work_prefix) {
+    if (!resolved_hmetis.has_value()) {
+        return std::nullopt;
+    }
+    return run_hmetis_initial_partition(hypergraph,
+                                        *resolved_hmetis,
+                                        options.num_parts,
+                                        options.imb,
+                                        work_prefix,
+                                        10);
 }
 
 std::vector<int> lift_partition_to_original(const Hypergraph& original_hypergraph,
@@ -311,6 +454,60 @@ bool better_partition(const PartitionResult& candidate,
            (candidate_penalty == current_penalty && candidate.cutsize < current.cutsize);
 }
 
+ProcessedRefineResult select_final_processed_result(const ProcessedRefineResult& initial_result,
+                                                    const std::vector<ProcessedRefineResult>& iteration_results,
+                                                    const std::optional<ProcessedRefineResult>& final_overlay,
+                                                    const BalanceLimits& limits) {
+    std::optional<ProcessedRefineResult> best_post_refined;
+    for (const ProcessedRefineResult& result : iteration_results) {
+        if (!best_post_refined.has_value() ||
+            better_partition(result.metrics, best_post_refined->metrics, limits)) {
+            best_post_refined = result;
+        }
+    }
+    if (final_overlay.has_value() &&
+        (!best_post_refined.has_value() ||
+         better_partition(final_overlay->metrics, best_post_refined->metrics, limits))) {
+        best_post_refined = *final_overlay;
+    }
+    if (!best_post_refined.has_value()) {
+        return initial_result;
+    }
+    if (better_partition(initial_result.metrics, best_post_refined->metrics, limits)) {
+        return initial_result;
+    }
+    return *best_post_refined;
+}
+
+bool overlay_external_tools_available(const SpecPartOptions& options,
+                                      const ExternalRuntimeContext& runtime) {
+    if (!options.enable_optimal_partitioner) {
+        return false;
+    }
+    if (options.enable_ilp_partitioner && runtime.resolved_ilp_partitioner.has_value()) {
+        return true;
+    }
+    if (options.enable_hmetis_partitioner && runtime.resolved_hmetis.has_value()) {
+        return true;
+    }
+    return false;
+}
+
+bool optimal_partitioner_uses_parallel_hmetis_thread_loop(const Hypergraph& hypergraph,
+                                                          int num_parts,
+                                                          const SpecPartOptions& options,
+                                                          const ExternalRuntimeContext& runtime) {
+    if (!options.enable_optimal_partitioner ||
+        !options.enable_hmetis_partitioner ||
+        !runtime.resolved_hmetis.has_value()) {
+        return false;
+    }
+    const bool small_ilp_case =
+        (hypergraph.num_hyperedges < 1500 && num_parts == 2) ||
+        (hypergraph.num_hyperedges < 300 && num_parts > 2);
+    return !small_ilp_case;
+}
+
 std::vector<int> refine_partition_with_external_tools(const Hypergraph& hypergraph,
                                                       const std::vector<int>& partition,
                                                       int num_parts,
@@ -318,7 +515,7 @@ std::vector<int> refine_partition_with_external_tools(const Hypergraph& hypergra
                                                       const SpecPartOptions& options,
                                                       const ExternalRuntimeContext& runtime,
                                                       int run_id,
-                                                      std::mt19937& rng);
+                                                      AlgorithmRng& rng);
 
 std::optional<OptimalPartitionerResult> partition_overlay_with_optimal_partitioner(
     const Hypergraph& hypergraph,
@@ -335,7 +532,7 @@ std::optional<ProcessedRefineResult> realize_overlay_partition(const Hypergraph&
                                                                const SpecPartOptions& options,
                                                                const ExternalRuntimeContext& runtime,
                                                                int run_id,
-                                                               std::mt19937& rng);
+                                                               AlgorithmRng& rng);
 
 void log_partition_metrics(const std::string& label, const PartitionResult& metrics);
 
@@ -353,7 +550,14 @@ std::vector<RefinedCandidate> refine_tree_candidates(const Hypergraph& hypergrap
                                                      const SpecPartOptions& options,
                                                      const ExternalRuntimeContext& runtime,
                                                      int run_id_base,
-                                                     std::mt19937& rng) {
+                                                     AlgorithmRng& rng) {
+    if (!candidates.empty()) {
+        // Julia enters a Threads.@threads loop for triton_part_refine on every
+        // iteration. Even when the refiner is effectively a no-op, creating
+        // the threaded task advances the parent TaskLocalRNG split state.
+        emulate_julia_thread_loop_task_fork(rng);
+    }
+
     std::vector<RefinedCandidate> unique_candidates;
     std::unordered_map<int, int> seen_cutsize;
 
@@ -407,71 +611,90 @@ std::optional<ProcessedRefineResult> run_overlay_round(const Hypergraph& hypergr
                                                        const SpecPartOptions& options,
                                                        const ExternalRuntimeContext& runtime,
                                                        int run_id,
-                                                       std::mt19937& rng) {
+                                                       AlgorithmRng& rng) {
     if (partitions.empty()) {
         return std::nullopt;
     }
 
-    OverlayResult overlaid = overlay_partitions(partitions, hypergraph);
+    OverlayResult overlaid = overlay_partitions(partitions, hypergraph, rng);
+    dump_overlay_debug_artifacts(overlaid, partitions, run_id);
     std::vector<int> contracted_base;
     if (!overlay_base_partition.empty()) {
         contracted_base = contract_partition_to_overlay(
             overlay_base_partition, overlaid.clusters, overlaid.hypergraph.num_vertices);
     }
 
-    std::optional<ProcessedRefineResult> best_result;
-
-    std::mt19937 internal_rng = rng;
-    std::vector<int> internal_partition =
-        tree_partition_best(overlaid.hypergraph, tree_options, contracted_base, internal_rng);
-    if (valid_partition_labels(internal_partition,
-                               num_parts,
-                               overlaid.hypergraph.num_vertices)) {
-        best_result = realize_overlay_partition(hypergraph,
-                                                overlaid,
-                                                internal_partition,
-                                                num_parts,
-                                                limits,
-                                                options,
-                                                runtime,
-                                                run_id,
-                                                internal_rng);
-    }
-
-    std::optional<OptimalPartitionerResult> external =
-        partition_overlay_with_optimal_partitioner(overlaid.hypergraph,
-                                                   tree_options,
-                                                   options,
-                                                   runtime,
-                                                   run_id);
-    if (external.has_value() &&
-        valid_partition_labels(external->partition,
-                               num_parts,
-                               overlaid.hypergraph.num_vertices)) {
-        std::mt19937 external_rng = rng;
-        std::optional<ProcessedRefineResult> external_result =
-            realize_overlay_partition(hypergraph,
-                                      overlaid,
-                                      external->partition,
-                                      num_parts,
-                                      limits,
-                                      options,
-                                      runtime,
-                                      run_id,
-                                      external_rng);
-        if (external_result.has_value()) {
-            if (!best_result.has_value() ||
-                better_partition(external_result->metrics, best_result->metrics, limits)) {
-                std::cout << "Overlay external partitioner: " << external->method << '\n';
-                best_result = std::move(external_result);
-            } else {
-                std::cout << "Overlay external partitioner: " << external->method
-                          << " (rejected, internal overlay better)\n";
+    const bool have_external_tools = overlay_external_tools_available(options, runtime);
+    if (have_external_tools) {
+        const std::optional<std::string> skip_reason =
+            optimal_partitioner_skip_reason(overlaid.hypergraph,
+                                            make_optimal_partitioner_options(options, num_parts));
+        if (!skip_reason.has_value() &&
+            optimal_partitioner_uses_parallel_hmetis_thread_loop(
+                overlaid.hypergraph, num_parts, options, runtime)) {
+            emulate_julia_thread_loop_task_fork(rng);
+        }
+        std::optional<OptimalPartitionerResult> external =
+            partition_overlay_with_optimal_partitioner(overlaid.hypergraph,
+                                                       tree_options,
+                                                       options,
+                                                       runtime,
+                                                       run_id);
+        if (external.has_value() &&
+            valid_partition_labels(external->partition,
+                                   num_parts,
+                                   overlaid.hypergraph.num_vertices)) {
+            AlgorithmRng external_rng = rng;
+            std::optional<ProcessedRefineResult> external_result =
+                realize_overlay_partition(hypergraph,
+                                          overlaid,
+                                          external->partition,
+                                          num_parts,
+                                          limits,
+                                          options,
+                                          runtime,
+                                          run_id,
+                                          external_rng);
+            if (external_result.has_value()) {
+                std::cout << "Overlay optimal partitioner: " << external->method << '\n';
+                return external_result;
             }
+            std::cout << "Overlay optimal partitioner: " << external->method
+                      << " (projection/refine failed, falling back to internal overlay)\n";
+        } else if (skip_reason.has_value()) {
+            std::cout << "Overlay optimal partitioner: " << *skip_reason
+                      << " (falling back to internal overlay)\n";
+        } else {
+            std::cout << "Overlay optimal partitioner: failed to produce a valid overlay partition"
+                      << " (falling back to internal overlay)\n";
         }
     }
 
-    return best_result;
+    AlgorithmRng internal_rng = rng;
+    std::vector<int> internal_partition =
+        tree_partition_best(overlaid.hypergraph, tree_options, contracted_base, internal_rng);
+    if (!valid_partition_labels(internal_partition,
+                                num_parts,
+                                overlaid.hypergraph.num_vertices)) {
+        return std::nullopt;
+    }
+    std::optional<ProcessedRefineResult> internal_result =
+        realize_overlay_partition(hypergraph,
+                                  overlaid,
+                                  internal_partition,
+                                  num_parts,
+                                  limits,
+                                  options,
+                                  runtime,
+                                  run_id,
+                                  internal_rng);
+    if (internal_result.has_value()) {
+        if (have_external_tools) {
+            std::cout << "Overlay internal fallback: using tree partition on contracted overlay\n";
+        }
+        return internal_result;
+    }
+    return std::nullopt;
 }
 
 std::vector<int> refine_partition_with_external_tools(const Hypergraph& hypergraph,
@@ -481,7 +704,19 @@ std::vector<int> refine_partition_with_external_tools(const Hypergraph& hypergra
                                                       const SpecPartOptions& options,
                                                       const ExternalRuntimeContext& runtime,
                                                       int run_id,
-                                                      std::mt19937& rng) {
+                                                      AlgorithmRng& rng) {
+    (void)hypergraph;
+    (void)num_parts;
+    (void)limits;
+    (void)rng;
+
+    if (!options.enable_triton_refiner) {
+        return partition;
+    }
+    if (!runtime.resolved_triton_refiner.has_value() || !runtime.processed_hypergraph_file.has_value()) {
+        return partition;
+    }
+
     if (options.enable_triton_refiner && runtime.processed_hypergraph_file.has_value()) {
         const std::optional<std::vector<int>> refined = run_triton_refiner(
             *runtime.processed_hypergraph_file,
@@ -492,8 +727,9 @@ std::vector<int> refine_partition_with_external_tools(const Hypergraph& hypergra
         if (refined.has_value() && static_cast<int>(refined->size()) == hypergraph.num_vertices) {
             return *refined;
         }
+        std::cout << "Triton/OpenROAD refine: invalid output, keeping partition unchanged to match Julia\n";
     }
-    return local_refine_partition(hypergraph, partition, num_parts, limits, rng);
+    return partition;
 }
 
 std::optional<OptimalPartitionerResult> partition_overlay_with_optimal_partitioner(
@@ -518,7 +754,7 @@ std::optional<ProcessedRefineResult> realize_overlay_partition(const Hypergraph&
                                                                const SpecPartOptions& options,
                                                                const ExternalRuntimeContext& runtime,
                                                                int run_id,
-                                                               std::mt19937& rng) {
+                                                               AlgorithmRng& rng) {
     std::vector<int> projected =
         project_partition(overlaid.clusters, contracted_partition, hypergraph.num_vertices);
     if (!valid_partition_labels(projected, num_parts, hypergraph.num_vertices)) {
@@ -603,7 +839,7 @@ void log_external_runtime_context(const SpecPartOptions& options, const External
     } else if (runtime.resolved_triton_refiner.has_value()) {
         std::cout << "  Triton/OpenROAD refine: " << *runtime.resolved_triton_refiner << '\n';
     } else {
-        std::cout << "  Triton/OpenROAD refine: not found, using internal local_refine fallback\n";
+        std::cout << "  Triton/OpenROAD refine: not found, keeping partition unchanged to match Julia\n";
     }
 }
 
@@ -622,7 +858,7 @@ ProcessedRefineResult two_way_spectral_refine(const Hypergraph& processed,
                                               std::vector<int> current,
                                               const SpecPartOptions& options,
                                               const ExternalRuntimeContext& runtime,
-                                              std::mt19937& rng) {
+                                              AlgorithmRng& rng) {
     PartitionResult current_metrics = evaluate_partition(processed, 2, current);
     log_partition_metrics("Initial two-way partition", current_metrics);
 
@@ -630,14 +866,16 @@ ProcessedRefineResult two_way_spectral_refine(const Hypergraph& processed,
     const TreePartitionOptions tree_options = make_tree_partition_options(options, 2);
     TreePartitionOptions candidate_options = tree_options;
     candidate_options.best_solns = 0;
-    const WeightedGraph graph = hypergraph_to_graph(processed, options.ncycles, rng);
+    const WeightedGraph graph = hypergraph_to_graph(processed, options.ncycles, options.seed, &rng);
     const PartitionIndex tree_fixed_vertices = empty_partition_index();
     const std::vector<int> anchor_partition = current;
-    ProcessedRefineResult best_result{current, current_metrics};
+    const ProcessedRefineResult initial_result{current, current_metrics};
     std::vector<std::vector<int>> global_partitions;
+    std::vector<ProcessedRefineResult> iteration_results;
 
-    for (int iter = 0; iter < std::max(1, options.refine_iters); ++iter) {
-        const Eigen::MatrixXd embedding = two_way_iteration_embedding(processed, graph, current, options);
+    const int refine_iters = std::max(0, options.refine_iters);
+    for (int iter = 0; iter < refine_iters; ++iter) {
+        const Eigen::MatrixXd embedding = two_way_iteration_embedding(processed, graph, current, options, rng);
         std::vector<TreePartitionCandidate> tree_candidates = tree_partition_with_embedding(processed,
                                                                                             graph,
                                                                                             embedding,
@@ -675,43 +913,43 @@ ProcessedRefineResult two_way_spectral_refine(const Hypergraph& processed,
             }
 
             global_partitions.push_back(current);
-            if (better_partition(current_metrics, best_result.metrics, limits)) {
-                best_result = {current, current_metrics};
+            iteration_results.push_back({current, current_metrics});
+
+            if (iter == 0 && stop_after_first_overlay_enabled()) {
+                return {current, current_metrics};
             }
         }
 
         log_partition_metrics("Two-way refine iteration " + std::to_string(iter + 1), current_metrics);
     }
 
-    if (!global_partitions.empty()) {
+    std::optional<ProcessedRefineResult> final_overlay_result;
+    if (!anchor_partition.empty()) {
         std::vector<std::vector<int>> overlay_inputs = global_partitions;
         overlay_inputs.push_back(anchor_partition);
-        std::optional<ProcessedRefineResult> final_overlay = run_overlay_round(processed,
-                                                                               overlay_inputs,
-                                                                               tree_options,
-                                                                               {},
-                                                                               2,
-                                                                               limits,
-                                                                               options,
-                                                                               runtime,
-                                                                               5000,
-                                                                               rng);
-        if (final_overlay.has_value()) {
-            log_partition_metrics("Final two-way overlay", final_overlay->metrics);
-            if (better_partition(final_overlay->metrics, best_result.metrics, limits)) {
-                best_result = *final_overlay;
-            }
+        final_overlay_result = run_overlay_round(processed,
+                                                 overlay_inputs,
+                                                 tree_options,
+                                                 {},
+                                                 2,
+                                                 limits,
+                                                 options,
+                                                 runtime,
+                                                 5000,
+                                                 rng);
+        if (final_overlay_result.has_value()) {
+            log_partition_metrics("Final two-way overlay", final_overlay_result->metrics);
         }
     }
 
-    return best_result;
+    return select_final_processed_result(initial_result, iteration_results, final_overlay_result, limits);
 }
 
 ProcessedRefineResult k_way_spectral_refine(const Hypergraph& processed,
                                             std::vector<int> current,
                                             const SpecPartOptions& options,
                                             const ExternalRuntimeContext& runtime,
-                                            std::mt19937& rng) {
+                                            AlgorithmRng& rng) {
     PartitionResult current_metrics = evaluate_partition(processed, options.num_parts, current);
     log_partition_metrics("Initial k-way partition", current_metrics);
 
@@ -719,14 +957,28 @@ ProcessedRefineResult k_way_spectral_refine(const Hypergraph& processed,
     const TreePartitionOptions tree_options = make_tree_partition_options(options, options.num_parts);
     TreePartitionOptions candidate_options = tree_options;
     candidate_options.best_solns = 0;
-    const WeightedGraph graph = hypergraph_to_graph(processed, options.ncycles, rng);
+    const WeightedGraph graph = hypergraph_to_graph(processed, options.ncycles, options.seed, &rng);
+    dump_main_rng_state("cpp-kway-after-graphification", rng);
     const PartitionIndex tree_fixed_vertices = empty_partition_index();
     const std::vector<int> anchor_partition = current;
-    ProcessedRefineResult best_result{current, current_metrics};
+    const ProcessedRefineResult initial_result{current, current_metrics};
     std::vector<std::vector<int>> global_partitions;
+    std::vector<ProcessedRefineResult> iteration_results;
 
-    for (int iter = 0; iter < std::max(1, options.refine_iters); ++iter) {
-        const Eigen::MatrixXd embedding = k_way_iteration_embedding(processed, graph, current, options);
+    const int refine_iters = std::max(0, options.refine_iters);
+    for (int iter = 0; iter < refine_iters; ++iter) {
+        dump_main_rng_state("cpp-kway-iter-" + std::to_string(iter + 1) + "-start", rng);
+        const Eigen::MatrixXd embedding =
+            k_way_iteration_embedding(processed,
+                                      graph,
+                                      anchor_partition,
+                                      options,
+                                      rng,
+                                      Eigen::MatrixXd(),
+                                      "cpp-kway-concat-embedding-iter-" + std::to_string(iter + 1) + ".txt",
+                                      "iter-" + std::to_string(iter + 1));
+        dump_embedding_debug_artifact(embedding,
+                                      "cpp-kway-embedding-iter-" + std::to_string(iter + 1) + ".txt");
         std::vector<TreePartitionCandidate> tree_candidates = tree_partition_with_embedding(processed,
                                                                                             graph,
                                                                                             embedding,
@@ -751,11 +1003,12 @@ ProcessedRefineResult k_way_spectral_refine(const Hypergraph& processed,
         if (!refined_candidates.empty()) {
             std::vector<std::vector<int>> overlay_inputs =
                 select_overlay_inputs(refined_candidates, options.best_solns, anchor_partition);
+            dump_main_rng_state("cpp-kway-iter-" + std::to_string(iter + 1) + "-pre-overlay", rng);
             std::optional<ProcessedRefineResult> overlaid =
                 run_overlay_round(processed,
                                   overlay_inputs,
                                   tree_options,
-                                  current,
+                                  {},
                                   options.num_parts,
                                   limits,
                                   options,
@@ -769,39 +1022,39 @@ ProcessedRefineResult k_way_spectral_refine(const Hypergraph& processed,
                 current = refined_candidates.front().partition;
                 current_metrics = refined_candidates.front().metrics;
             }
+            dump_main_rng_state("cpp-kway-iter-" + std::to_string(iter + 1) + "-post-overlay", rng);
 
             global_partitions.push_back(current);
-            if (better_partition(current_metrics, best_result.metrics, limits)) {
-                best_result = {current, current_metrics};
+            iteration_results.push_back({current, current_metrics});
+
+            if (iter == 0 && stop_after_first_overlay_enabled()) {
+                return {current, current_metrics};
             }
         }
 
         log_partition_metrics("K-way refine iteration " + std::to_string(iter + 1), current_metrics);
     }
 
-    if (!global_partitions.empty()) {
+    std::optional<ProcessedRefineResult> final_overlay_result;
+    if (!anchor_partition.empty()) {
         std::vector<std::vector<int>> overlay_inputs = global_partitions;
         overlay_inputs.push_back(anchor_partition);
-        std::optional<ProcessedRefineResult> final_overlay =
-            run_overlay_round(processed,
-                              overlay_inputs,
-                              tree_options,
-                              current,
-                              options.num_parts,
-                              limits,
-                              options,
-                              runtime,
-                              5000,
-                              rng);
-        if (final_overlay.has_value()) {
-            log_partition_metrics("Final k-way overlay", final_overlay->metrics);
-            if (better_partition(final_overlay->metrics, best_result.metrics, limits)) {
-                best_result = *final_overlay;
-            }
+        final_overlay_result = run_overlay_round(processed,
+                                                 overlay_inputs,
+                                                 tree_options,
+                                                 {},
+                                                 options.num_parts,
+                                                 limits,
+                                                 options,
+                                                 runtime,
+                                                 5000,
+                                                 rng);
+        if (final_overlay_result.has_value()) {
+            log_partition_metrics("Final k-way overlay", final_overlay_result->metrics);
         }
     }
 
-    return best_result;
+    return select_final_processed_result(initial_result, iteration_results, final_overlay_result, limits);
 }
 
 }  // namespace
@@ -846,6 +1099,8 @@ bool parse_arguments(int argc, char** argv, SpecPartOptions& options, std::strin
                 options.ncycles = std::stoi(read_value(i));
             } else if (arg == "--seed") {
                 options.seed = std::stoi(read_value(i));
+            } else if (arg == "--log-lobpcg") {
+                options.log_lobpcg = true;
             } else if (arg == "--projection-strategy" || arg == "--kway-projection") {
                 ProjectionStrategy strategy = options.projection_strategy;
                 const std::string value = read_value(i);
@@ -900,7 +1155,7 @@ bool parse_arguments(int argc, char** argv, SpecPartOptions& options, std::strin
 }
 
 PartitionResult specpart_run(const SpecPartOptions& options) {
-    std::mt19937 rng(options.seed);
+    AlgorithmRng rng(options.seed);
     Hypergraph original = read_hypergraph_file(options.hypergraph_file, options.fixed_file);
     std::cout << "============================================================\n";
     std::cout << "K-SpecPart C++\n";
@@ -920,22 +1175,34 @@ PartitionResult specpart_run(const SpecPartOptions& options) {
                   << "two-way mode keeps the direct Julia-style two-way embedding.\n";
     }
 
+    ExternalRuntimeContext runtime = make_external_runtime_context(processed, options);
+    log_external_runtime_context(options, runtime);
+
     std::vector<int> hint;
     if (!options.hint_file.empty()) {
         hint = read_partition_file(options.hint_file);
+    } else {
+        std::optional<std::vector<int>> generated_hint =
+            generate_initial_hmetis_hint(original,
+                                         options,
+                                         runtime.resolved_hmetis.has_value()
+                                             ? runtime.resolved_hmetis
+                                             : resolve_hmetis_executable(options.hmetis_executable),
+                                         runtime.work_prefix + ".initial-hint");
+        if (generated_hint.has_value()) {
+            hint = std::move(*generated_hint);
+            log_partition_metrics("Initial hMETIS hint",
+                                  evaluate_partition(original, options.num_parts, hint));
+        }
     }
     std::vector<int> processed_hint = remap_hint_to_processed(hint, isolated);
     std::vector<int> current = initial_partition_for_processed(processed, options, processed_hint, rng);
-    ExternalRuntimeContext runtime = make_external_runtime_context(processed, options);
-    log_external_runtime_context(options, runtime);
 
     ProcessedRefineResult refined = options.num_parts == 2
         ? two_way_spectral_refine(processed, current, options, runtime, rng)
         : k_way_spectral_refine(processed, current, options, runtime, rng);
 
     std::vector<int> full_partition = lift_partition_to_original(original, isolated, refined.partition, options.num_parts);
-    const BalanceLimits original_limits = compute_balance_limits(original, options.num_parts, options.imb);
-    full_partition = local_refine_partition(original, full_partition, options.num_parts, original_limits, rng);
     PartitionResult final_metrics = evaluate_partition(original, options.num_parts, full_partition);
     log_partition_metrics("Final original partition", final_metrics);
 

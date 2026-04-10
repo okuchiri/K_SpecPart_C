@@ -12,7 +12,12 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <limits>
 #include <numeric>
 #include <optional>
@@ -48,6 +53,180 @@ struct TreeSweepResult {
     int cutsize = std::numeric_limits<int>::max();
     int cut_point = -1;
 };
+
+bool tree_partition_debug_enabled() {
+    const char* raw = std::getenv("K_SPECPART_DEBUG_TREE_PARTITION");
+    return raw != nullptr && *raw != '\0' && std::string(raw) != "0";
+}
+
+bool mst_trace_debug_enabled() {
+    const char* raw = std::getenv("K_SPECPART_DEBUG_MST_TRACE");
+    return raw != nullptr && *raw != '\0' && std::string(raw) != "0";
+}
+
+std::optional<std::filesystem::path> tree_dump_dir() {
+    const char* raw = std::getenv("K_SPECPART_DEBUG_TREE_DUMP_DIR");
+    if (raw == nullptr || *raw == '\0') {
+        return std::nullopt;
+    }
+    std::filesystem::path dir(raw);
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        return std::nullopt;
+    }
+    return dir;
+}
+
+std::string subset_label(const std::vector<int>& dims) {
+    std::string label = "[";
+    for (int i = 0; i < static_cast<int>(dims.size()); ++i) {
+        if (i > 0) {
+            label += ", ";
+        }
+        label += std::to_string(dims[i] + 1);
+    }
+    label += "]";
+    return label;
+}
+
+std::string subset_file_label(const std::vector<int>& dims) {
+    std::string label;
+    for (int i = 0; i < static_cast<int>(dims.size()); ++i) {
+        if (i > 0) {
+            label += "-";
+        }
+        label += std::to_string(dims[i] + 1);
+    }
+    if (label.empty()) {
+        label = "none";
+    }
+    return label;
+}
+
+std::optional<std::filesystem::path> mst_trace_path(int tree_type, const std::vector<int>& dims) {
+    if (!mst_trace_debug_enabled()) {
+        return std::nullopt;
+    }
+    const std::optional<std::filesystem::path> dir = tree_dump_dir();
+    if (!dir.has_value()) {
+        return std::nullopt;
+    }
+    return *dir / ("mst-trace.type-" + std::to_string(tree_type) + ".dims-" +
+                   subset_file_label(dims) + ".txt");
+}
+
+struct MstTraceWriter {
+    explicit MstTraceWriter(const std::optional<std::filesystem::path>& path) {
+        if (!path.has_value()) {
+            return;
+        }
+        output.open(path->string());
+        if (output) {
+            output << std::setprecision(17);
+        }
+    }
+
+    bool enabled() const {
+        return static_cast<bool>(output);
+    }
+
+    void log_pop(int iter, int vertex, double queue_weight, double best_weight, int parent) {
+        if (!enabled()) {
+            return;
+        }
+        output << "pop " << iter << ' ' << vertex << ' ' << queue_weight << ' '
+               << best_weight << ' ' << parent << '\n';
+    }
+
+    void log_relax(int iter, int pass, int src, int dst, double old_weight, double new_weight) {
+        if (!enabled()) {
+            return;
+        }
+        output << "relax " << iter << ' ' << pass << ' ' << src << ' ' << dst << ' '
+               << old_weight << ' ' << new_weight << '\n';
+    }
+
+    void log_retry(int iter, int vertex) {
+        if (!enabled()) {
+            return;
+        }
+        output << "retry " << iter << ' ' << vertex << '\n';
+    }
+
+    void log_finish(int vertex, int parent) {
+        if (!enabled()) {
+            return;
+        }
+        output << "finish " << vertex << ' ' << parent << '\n';
+    }
+
+    std::ofstream output;
+};
+
+void dump_weighted_graph(const WeightedGraph& graph,
+                         const std::filesystem::path& path) {
+    std::ofstream output(path);
+    if (!output) {
+        return;
+    }
+    output << std::setprecision(17);
+    int edges = 0;
+    for (int vertex = 0; vertex < graph.num_vertices; ++vertex) {
+        for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
+            if (vertex < neighbor && weight != 0.0) {
+                ++edges;
+            }
+        }
+    }
+    output << graph.num_vertices << ' ' << edges << '\n';
+    for (int vertex = 0; vertex < graph.num_vertices; ++vertex) {
+        for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
+            if (vertex < neighbor && weight != 0.0) {
+                output << vertex << ' ' << neighbor << ' ' << weight << '\n';
+            }
+        }
+    }
+}
+
+void maybe_dump_tree_graph(const WeightedGraph& graph,
+                           const char* stage,
+                           int tree_type,
+                           const std::vector<int>& dims) {
+    const std::optional<std::filesystem::path> dir = tree_dump_dir();
+    if (!dir.has_value()) {
+        return;
+    }
+    const std::string file_name = std::string(stage) + ".n-" + std::to_string(graph.num_vertices) +
+                                  ".type-" + std::to_string(tree_type) + ".dims-" +
+                                  subset_file_label(dims) + ".txt";
+    dump_weighted_graph(graph, *dir / file_name);
+}
+
+void log_raw_tree_candidate(const char* method,
+                            int tree_type,
+                            const std::vector<int>& dims,
+                            const Hypergraph& hypergraph,
+                            int num_parts,
+                            const std::vector<int>& partition) {
+    if (!tree_partition_debug_enabled() ||
+        static_cast<int>(partition.size()) != hypergraph.num_vertices) {
+        return;
+    }
+    const PartitionResult metrics = evaluate_partition(hypergraph, num_parts, partition);
+    std::cout << "[tree-debug] type=" << tree_type
+              << " dims=" << subset_label(dims)
+              << " method=" << method
+              << " cutsize=" << metrics.cutsize
+              << " balance=[";
+    for (int i = 0; i < static_cast<int>(metrics.balance.size()); ++i) {
+        if (i > 0) {
+            std::cout << ", ";
+        }
+        std::cout << metrics.balance[i];
+    }
+    std::cout << "]\n";
+}
 
 std::uint64_t make_edge_key(int u, int v) {
     const std::uint32_t a = static_cast<std::uint32_t>(std::min(u, v));
@@ -179,11 +358,11 @@ double coordinate_distance(const Eigen::MatrixXd& embedding, int lhs, int rhs, b
             distance += std::abs(span);
         }
     }
-    return distance > 0.0 ? distance : 1e-6;
+    return distance;
 }
 
 void add_undirected_edge(WeightedGraph& graph, int u, int v, double weight) {
-    if (u == v || weight <= 0.0) {
+    if (u == v || !std::isfinite(weight) || weight < 0.0) {
         return;
     }
     graph.adjacency[u].push_back({v, weight});
@@ -266,7 +445,10 @@ WeightedGraph reweight_graph(const WeightedGraph& graph, const Eigen::MatrixXd& 
     return reweighted;
 }
 
-WeightedGraph construct_mst_tree(const WeightedGraph& graph, const Eigen::MatrixXd& embedding) {
+WeightedGraph construct_mst_tree(const WeightedGraph& graph,
+                                 const Eigen::MatrixXd& embedding,
+                                 const std::vector<int>& dims) {
+    (void)embedding;
     const int n = graph.num_vertices;
     WeightedGraph tree = make_empty_graph(n);
     if (n <= 1) {
@@ -290,69 +472,69 @@ WeightedGraph construct_mst_tree(const WeightedGraph& graph, const Eigen::Matrix
     std::vector<int> finished(n, 0);
     std::vector<double> best_weight(n, std::numeric_limits<double>::infinity());
     std::vector<int> parent(n, -1);
-    // Keep the same control structure as Julia's `degrees_aware_prim_mst`.
-    // That helper currently checks degree limits but never updates `degrees`.
+    // Match Julia's `degrees_aware_prim_mst`: keep the degree check but do not
+    // update the degrees vector, and start Prim from vertex 1 (0 in C++) only.
     std::vector<int> degrees(n, 0);
-    std::vector<int> roots;
-    double max_weight = 1.0;
+    best_weight[0] = -1.0;
+    queue.push({best_weight[0], 0});
+    MstTraceWriter trace(mst_trace_path(2, dims));
+    int iter = 0;
 
-    for (int start = 0; start < n; ++start) {
-        if (finished[start]) {
+    while (!queue.empty()) {
+        const QueueVertex current = queue.top();
+        queue.pop();
+        const int vertex = current.vertex;
+        if (finished[vertex]) {
+            continue;
+        }
+        if (current.weight > best_weight[vertex]) {
             continue;
         }
 
-        roots.push_back(start);
-        best_weight[start] = -1.0;
-        queue.push({best_weight[start], start});
+        finished[vertex] = 1;
+        trace.log_pop(iter, vertex, current.weight, best_weight[vertex], parent[vertex]);
+        bool connection_flag = false;
 
-        while (!queue.empty()) {
-            const QueueVertex current = queue.top();
-            queue.pop();
-            const int vertex = current.vertex;
-            if (finished[vertex]) {
+        for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
+            if (degrees[neighbor] + 1 > degree_threshold && degrees[vertex] + 1 > degree_threshold) {
                 continue;
             }
-            if (current.weight > best_weight[vertex]) {
+            if (finished[neighbor]) {
                 continue;
             }
+            if (best_weight[neighbor] > weight) {
+                const double old_weight = best_weight[neighbor];
+                best_weight[neighbor] = weight;
+                parent[neighbor] = vertex;
+                queue.push({weight, neighbor});
+                connection_flag = true;
+                trace.log_relax(iter, 1, vertex, neighbor, old_weight, weight);
+            }
+        }
 
-            finished[vertex] = 1;
-            bool connection_flag = false;
-
+        if (!connection_flag) {
+            trace.log_retry(iter, vertex);
             for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
-                if (degrees[neighbor] + 1 > degree_threshold && degrees[vertex] + 1 > degree_threshold) {
-                    continue;
-                }
                 if (finished[neighbor]) {
                     continue;
                 }
                 if (best_weight[neighbor] > weight) {
+                    const double old_weight = best_weight[neighbor];
                     best_weight[neighbor] = weight;
                     parent[neighbor] = vertex;
                     queue.push({weight, neighbor});
-                    connection_flag = true;
-                }
-            }
-
-            if (!connection_flag) {
-                for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
-                    if (finished[neighbor]) {
-                        continue;
-                    }
-                    if (best_weight[neighbor] > weight) {
-                        best_weight[neighbor] = weight;
-                        parent[neighbor] = vertex;
-                        queue.push({weight, neighbor});
-                    }
+                    trace.log_relax(iter, 2, vertex, neighbor, old_weight, weight);
                 }
             }
         }
+        ++iter;
     }
 
     for (int vertex = 0; vertex < n; ++vertex) {
         if (parent[vertex] < 0) {
             continue;
         }
+        trace.log_finish(vertex, parent[vertex]);
         const int source = parent[vertex];
         double edge_weight = 1e-6;
         for (const auto& [neighbor, weight] : graph.adjacency[vertex]) {
@@ -361,25 +543,7 @@ WeightedGraph construct_mst_tree(const WeightedGraph& graph, const Eigen::Matrix
                 break;
             }
         }
-        max_weight = std::max(max_weight, edge_weight);
         add_undirected_edge(tree, source, vertex, edge_weight);
-    }
-
-    if (roots.size() > 1) {
-        std::sort(roots.begin(), roots.end(), [&](int lhs, int rhs) {
-            const double lv = embedding.cols() > 0 ? embedding(lhs, 0) : static_cast<double>(lhs);
-            const double rv = embedding.cols() > 0 ? embedding(rhs, 0) : static_cast<double>(rhs);
-            if (lv != rv) {
-                return lv < rv;
-            }
-            return lhs < rhs;
-        });
-        for (std::size_t i = 1; i < roots.size(); ++i) {
-            const int prev = roots[i - 1];
-            const int curr = roots[i];
-            const double bridge = max_weight * 2.0 + coordinate_distance(embedding, prev, curr, false);
-            add_undirected_edge(tree, prev, curr, bridge);
-        }
     }
 
     sort_graph_adjacency(tree);
@@ -407,17 +571,20 @@ WeightedGraph construct_path_tree(const Eigen::MatrixXd& embedding) {
     return tree;
 }
 
-WeightedGraph construct_tree(const WeightedGraph& graph, const Eigen::MatrixXd& embedding, int tree_type) {
+WeightedGraph construct_tree(const WeightedGraph& graph,
+                             const Eigen::MatrixXd& embedding,
+                             int tree_type,
+                             const std::vector<int>& dims) {
     if (tree_type == 1) {
         return construct_akpw_lsst_tree(graph, embedding);
     }
     if (tree_type == 2) {
-        return construct_mst_tree(graph, embedding);
+        return construct_mst_tree(graph, embedding, dims);
     }
     if (tree_type == 3) {
         return construct_path_tree(embedding);
     }
-    return construct_mst_tree(graph, embedding);
+    return construct_mst_tree(graph, embedding, dims);
 }
 
 std::vector<int> compact_partition_labels(const std::vector<int>& components) {
@@ -502,7 +669,11 @@ WeightedGraph build_metis_cost_tree(const WeightedGraph& tree,
                           distilled_cuts.edge_cuts_1[vertex] + nforced_01;
         const int exc_1 = distilled_cuts.edge_cuts[vertex] + nforced_1 - distilled_cuts.FB1[vertex] +
                           distilled_cuts.edge_cuts_0[vertex] + nforced_01;
-        add_undirected_edge(weighted_tree, vertex, parent, std::max(1, std::min(exc_0, exc_1)));
+        const double weight = static_cast<double>(std::min(exc_0, exc_1));
+        weighted_tree.adjacency[vertex].push_back({parent, weight});
+        weighted_tree.adjacency[parent].push_back({vertex, weight});
+        weighted_tree.degrees[vertex] += weight;
+        weighted_tree.degrees[parent] += weight;
     }
 
     sort_graph_adjacency(weighted_tree);
@@ -539,18 +710,32 @@ Eigen::MatrixXd build_k_way_embedding_from_partition(const Hypergraph& hypergrap
                                                      const WeightedGraph& graph,
                                                      const std::vector<int>& partition,
                                                      const TreePartitionOptions& options,
-                                                     const Eigen::MatrixXd& constraint_basis) {
+                                                     const Eigen::MatrixXd& constraint_basis,
+                                                     AlgorithmRng* shared_rng) {
     const auto part_vertices = vertices_by_part(partition, options.num_parts);
     std::vector<Eigen::MatrixXd> embeddings;
     embeddings.reserve(options.num_parts);
     const int dims = std::max(1, options.eigvecs);
     const int epsilon = std::max(1, options.num_parts - 1);
+    std::vector<AlgorithmRng> task_rngs;
+    AlgorithmRng* task_rng_ptr = nullptr;
+    if (shared_rng != nullptr) {
+        task_rngs.reserve(options.num_parts);
+        for (int part = 0; part < options.num_parts; ++part) {
+            task_rngs.push_back(shared_rng->fork_task_local());
+        }
+    }
 
     for (int part = 0; part < options.num_parts; ++part) {
         const PartitionIndex pindex = one_vs_rest_index(part_vertices, part);
+        if (shared_rng != nullptr) {
+            task_rng_ptr = &task_rngs[part];
+        } else {
+            task_rng_ptr = nullptr;
+        }
         embeddings.push_back(
             solve_eigs(hypergraph, graph, pindex, false, dims, options.solver_iters, epsilon,
-                       options.seed, constraint_basis));
+                       options.seed, constraint_basis, options.log_lobpcg, task_rng_ptr));
     }
 
     Eigen::MatrixXd concatenated = concatenate_embeddings(embeddings, hypergraph.num_vertices);
@@ -629,13 +814,15 @@ std::optional<TreeSweepResult> two_way_linear_tree_sweep(const WeightedGraph& tr
         cut_cost_1[vertex] = exc_1[vertex];
         if (cut_cost_0[vertex] <= cut_cost_1[vertex]) {
             cut_cost[vertex] = cut_cost_0[vertex];
-            area_util_0[vertex] = vtx_cuts[vertex];
-            area_util_1[vertex] = total_weight - vtx_cuts[vertex];
         } else {
             cut_cost[vertex] = cut_cost_1[vertex];
-            area_util_1[vertex] = vtx_cuts[vertex];
-            area_util_0[vertex] = total_weight - vtx_cuts[vertex];
         }
+        // Match the current Julia tree_partition.jl behavior literally.
+        // There, `findmin([cut_cost_0, cut_cost_1])` returns a 1-based index,
+        // but the subsequent `if pol == 0` check is never true, so the
+        // "else" orientation is always used in practice.
+        area_util_1[vertex] = vtx_cuts[vertex];
+        area_util_0[vertex] = total_weight - vtx_cuts[vertex];
         double area_cost = 0.0;
         if (area_util_0[vertex] > limits.max_capacity || area_util_1[vertex] > limits.max_capacity) {
             area_cost = huge_cost;
@@ -717,11 +904,24 @@ std::optional<std::vector<int>> k_way_linear_tree_sweep(const WeightedGraph& tre
     for (int level = 0; level < num_parts - 1; ++level) {
         std::optional<TreeSweepResult> result = two_way_linear_tree_sweep(tree, recursive_profile, recursive_hypergraph, recursive_limits);
         if (!result.has_value() || result->cut_point < 0) {
+            if (tree_partition_debug_enabled()) {
+                std::cout << "[tree-debug] k-way level=" << level
+                          << " failed: no valid two-way cut"
+                          << " recursive_max=" << recursive_limits.max_capacity
+                          << " recursive_min=" << recursive_limits.min_capacity << '\n';
+            }
             return std::nullopt;
         }
 
         const std::vector<int> blocks = compute_balance(recursive_hypergraph, result->partition, 2);
         const int smaller_side = blocks[0] <= blocks[1] ? 0 : 1;
+        if (tree_partition_debug_enabled()) {
+            std::cout << "[tree-debug] k-way level=" << level
+                      << " cut_point=" << result->cut_point
+                      << " cutsize=" << result->cutsize
+                      << " blocks=[" << blocks[0] << ", " << blocks[1] << "]"
+                      << " smaller=" << smaller_side << '\n';
+        }
         int recursive_total = 0;
         for (int vertex = 0; vertex < recursive_hypergraph.num_vertices; ++vertex) {
             if (result->partition[vertex] == smaller_side) {
@@ -735,7 +935,13 @@ std::optional<std::vector<int>> k_way_linear_tree_sweep(const WeightedGraph& tre
         recursive_limits.max_capacity = recursive_total - limits.min_capacity;
         if (level + 1 < num_parts - 1) {
             if (recursive_limits.max_capacity < recursive_limits.min_capacity) {
-                return std::nullopt;
+                if (tree_partition_debug_enabled()) {
+                    std::cout << "[tree-debug] k-way level=" << level
+                              << " note: recursive capacity inversion"
+                              << " recursive_total=" << recursive_total
+                              << " next_max=" << recursive_limits.max_capacity
+                              << " next_min=" << recursive_limits.min_capacity << '\n';
+                }
             }
             recursive_profile = distill_cuts_on_tree(recursive_hypergraph, fixed_vertices, tree, 0);
         }
@@ -752,7 +958,29 @@ std::optional<std::vector<int>> k_way_linear_tree_sweep(const WeightedGraph& tre
 
     TreeSweepResult result = evaluate_removed_edges(tree, hypergraph, removed_edges, num_parts, cut_points.empty() ? -1 : cut_points.back());
     if (result.partition.empty()) {
+        if (tree_partition_debug_enabled()) {
+            std::cout << "[tree-debug] k-way final failed: removed_edges=" << removed_edges.size()
+                      << " cut_points=";
+            for (int i = 0; i < static_cast<int>(cut_points.size()); ++i) {
+                if (i > 0) {
+                    std::cout << ',';
+                }
+                std::cout << cut_points[i];
+            }
+            std::cout << '\n';
+        }
         return std::nullopt;
+    }
+    if (tree_partition_debug_enabled()) {
+        std::cout << "[tree-debug] k-way final cutsize=" << result.cutsize
+                  << " cut_points=";
+        for (int i = 0; i < static_cast<int>(cut_points.size()); ++i) {
+            if (i > 0) {
+                std::cout << ',';
+            }
+            std::cout << cut_points[i];
+        }
+        std::cout << '\n';
     }
     return result.partition;
 }
@@ -774,14 +1002,18 @@ Eigen::MatrixXd slice_embedding(const Eigen::MatrixXd& embedding, const std::vec
     return sliced;
 }
 
-void enumerate_subsets_recursive(int dims,
-                                 int start,
-                                 std::vector<int>& current,
-                                 std::vector<std::vector<int>>& subsets) {
+void enumerate_subsets_of_size_recursive(int dims,
+                                         int start,
+                                         int target_size,
+                                         std::vector<int>& current,
+                                         std::vector<std::vector<int>>& subsets) {
+    if (static_cast<int>(current.size()) == target_size) {
+        subsets.push_back(current);
+        return;
+    }
     for (int index = start; index < dims; ++index) {
         current.push_back(index);
-        subsets.push_back(current);
-        enumerate_subsets_recursive(dims, index + 1, current, subsets);
+        enumerate_subsets_of_size_recursive(dims, index + 1, target_size, current, subsets);
         current.pop_back();
     }
 }
@@ -792,16 +1024,17 @@ std::vector<std::vector<int>> enumerate_embedding_subsets(int dims) {
     }
     std::vector<std::vector<int>> subsets;
     std::vector<int> current;
-    enumerate_subsets_recursive(dims, 0, current, subsets);
+    for (int subset_size = 1; subset_size <= dims; ++subset_size) {
+        enumerate_subsets_of_size_recursive(dims, 0, subset_size, current, subsets);
+    }
     return subsets;
 }
 
-std::vector<ScoredPartition> score_candidates(const Hypergraph& hypergraph,
-                                              const std::vector<std::vector<int>>& candidates,
-                                              int num_parts,
-                                              const BalanceLimits& limits) {
-    std::unordered_set<std::vector<int>, VectorHasher> seen;
-    std::vector<ScoredPartition> scored;
+std::vector<TreePartitionCandidate> materialize_tree_candidates(const Hypergraph& hypergraph,
+                                                                const std::vector<std::vector<int>>& candidates,
+                                                                int num_parts) {
+    std::vector<TreePartitionCandidate> materialized;
+    materialized.reserve(candidates.size());
     for (const auto& candidate : candidates) {
         if (!partition_complete(candidate, hypergraph.num_vertices)) {
             continue;
@@ -809,23 +1042,10 @@ std::vector<ScoredPartition> score_candidates(const Hypergraph& hypergraph,
         if (!fixed_vertices_satisfied(hypergraph, candidate, num_parts)) {
             continue;
         }
-        if (!seen.insert(candidate).second) {
-            continue;
-        }
         PartitionResult metrics = evaluate_partition(hypergraph, num_parts, candidate);
-        scored.push_back({candidate, metrics, balance_penalty(metrics.balance, limits)});
+        materialized.push_back({candidate, metrics.cutsize, metrics.balance});
     }
-
-    std::sort(scored.begin(), scored.end(), [](const ScoredPartition& lhs, const ScoredPartition& rhs) {
-        if ((lhs.penalty == 0) != (rhs.penalty == 0)) {
-            return lhs.penalty == 0;
-        }
-        if (lhs.penalty != rhs.penalty) {
-            return lhs.penalty < rhs.penalty;
-        }
-        return lhs.metrics.cutsize < rhs.metrics.cutsize;
-    });
-    return scored;
+    return materialized;
 }
 
 std::vector<std::vector<int>> generate_tree_candidates(const Hypergraph& hypergraph,
@@ -843,24 +1063,38 @@ std::vector<std::vector<int>> generate_tree_candidates(const Hypergraph& hypergr
             continue;
         }
         for (int tree_type = 1; tree_type <= 2; ++tree_type) {
+            if (tree_partition_debug_enabled()) {
+                std::cout << "[tree-debug] evaluating type=" << tree_type
+                          << " dims=" << subset_label(dims) << '\n';
+            }
             const bool lst = tree_type == 1;
             WeightedGraph reweighted = reweight_graph(graph, sliced, lst);
-            WeightedGraph tree = construct_tree(reweighted, sliced, tree_type);
+            maybe_dump_tree_graph(reweighted, "reweighted", tree_type, dims);
+            WeightedGraph tree = construct_tree(reweighted, sliced, tree_type, dims);
+            maybe_dump_tree_graph(tree, "rawtree", tree_type, dims);
             const CutProfile distilled_cuts = distill_cuts_on_tree(hypergraph, fixed_vertices, tree, 0);
-            std::optional<std::vector<int>> metis_partition =
-                metis_tree_partition_candidate(tree, distilled_cuts, hypergraph, num_parts, options, gpmetis_executable);
-            if (metis_partition.has_value()) {
-                candidates.push_back(std::move(*metis_partition));
+            if (gpmetis_executable.has_value()) {
+                const WeightedGraph metis_tree =
+                    build_metis_cost_tree(tree, distilled_cuts, hypergraph);
+                maybe_dump_tree_graph(metis_tree, "metis-tree", tree_type, dims);
+                std::optional<std::vector<int>> metis_partition = run_gpmetis_partition(
+                    metis_tree, num_parts, *gpmetis_executable, options.imb, options.seed);
+                if (metis_partition.has_value()) {
+                    log_raw_tree_candidate("metis", tree_type, dims, hypergraph, num_parts, *metis_partition);
+                    candidates.push_back(std::move(*metis_partition));
+                }
             }
             if (num_parts == 2) {
                 std::optional<TreeSweepResult> result = two_way_linear_tree_sweep(tree, distilled_cuts, hypergraph, limits);
                 if (result.has_value()) {
+                    log_raw_tree_candidate("tree", tree_type, dims, hypergraph, num_parts, result->partition);
                     candidates.push_back(std::move(result->partition));
                 }
             } else {
                 std::optional<std::vector<int>> partition =
                     k_way_linear_tree_sweep(tree, fixed_vertices, hypergraph, limits, num_parts);
                 if (partition.has_value()) {
+                    log_raw_tree_candidate("tree", tree_type, dims, hypergraph, num_parts, *partition);
                     candidates.push_back(std::move(partition.value()));
                 }
             }
@@ -878,16 +1112,12 @@ std::vector<std::vector<int>> generate_two_way_candidates(const Hypergraph& hype
                                                           const TreePartitionOptions& options,
                                                           const std::optional<std::string>& gpmetis_executable,
                                                           int best_solns,
-                                                          std::mt19937& rng) {
+                                                          AlgorithmRng& rng) {
     (void)rng;
     (void)best_solns;
-    std::vector<std::vector<int>> candidates =
-        generate_tree_candidates(hypergraph, graph, embedding, fixed_vertices, 2, limits, options, gpmetis_executable);
-    if (partition_complete(base_partition, hypergraph.num_vertices) &&
-        fixed_vertices_satisfied(hypergraph, base_partition, 2)) {
-        candidates.push_back(base_partition);
-    }
-    return candidates;
+    (void)base_partition;
+    return generate_tree_candidates(
+        hypergraph, graph, embedding, fixed_vertices, 2, limits, options, gpmetis_executable);
 }
 
 std::vector<std::vector<int>> generate_k_way_candidates(const Hypergraph& hypergraph,
@@ -900,16 +1130,12 @@ std::vector<std::vector<int>> generate_k_way_candidates(const Hypergraph& hyperg
                                                         const TreePartitionOptions& options,
                                                         const std::optional<std::string>& gpmetis_executable,
                                                         int best_solns,
-                                                        std::mt19937& rng) {
+                                                        AlgorithmRng& rng) {
     (void)rng;
     (void)best_solns;
-    std::vector<std::vector<int>> candidates = generate_tree_candidates(
+    (void)base_partition;
+    return generate_tree_candidates(
         hypergraph, graph, embedding, fixed_vertices, num_parts, limits, options, gpmetis_executable);
-    if (partition_complete(base_partition, hypergraph.num_vertices) &&
-        fixed_vertices_satisfied(hypergraph, base_partition, num_parts)) {
-        candidates.push_back(base_partition);
-    }
-    return candidates;
 }
 
 std::vector<int> fallback_partition(const Hypergraph& hypergraph, int num_parts) {
@@ -957,7 +1183,7 @@ std::vector<int> local_refine_partition(const Hypergraph& hypergraph,
                                         std::vector<int> partition,
                                         int num_parts,
                                         const BalanceLimits& limits,
-                                        std::mt19937& rng) {
+                                        AlgorithmRng& rng) {
     greedy_assign_unset_vertices(hypergraph, partition, limits, num_parts);
     std::vector<int> balance = compute_balance(hypergraph, partition, num_parts);
 
@@ -1057,15 +1283,13 @@ std::vector<TreePartitionCandidate> tree_partition_with_embedding(const Hypergra
                                                                   const PartitionIndex& fixed_vertices,
                                                                   const TreePartitionOptions& options,
                                                                   const std::vector<int>& base_partition,
-                                                                  std::mt19937& rng) {
-    std::vector<TreePartitionCandidate> result;
+                                                                  AlgorithmRng& rng) {
     if (hypergraph.num_vertices == 0) {
-        return result;
+        return {};
     }
     if (hypergraph.num_vertices == 1) {
         const int part = hypergraph.fixed[0] >= 0 ? hypergraph.fixed[0] : 0;
-        result.push_back({{part}, 0, {hypergraph.vwts[0]}});
-        return result;
+        return {{{part}, 0, {hypergraph.vwts[0]}}};
     }
 
     const BalanceLimits limits = compute_balance_limits(hypergraph, options.num_parts, options.imb);
@@ -1096,22 +1320,17 @@ std::vector<TreePartitionCandidate> tree_partition_with_embedding(const Hypergra
                                     gpmetis_executable,
                                     options.best_solns,
                                     rng);
-
-    auto scored = score_candidates(hypergraph, candidates, options.num_parts, limits);
-    if (options.best_solns > 0 && static_cast<int>(scored.size()) > options.best_solns) {
-        scored.resize(options.best_solns);
+    if (partition_complete(base_partition, hypergraph.num_vertices) &&
+        fixed_vertices_satisfied(hypergraph, base_partition, options.num_parts)) {
+        candidates.push_back(base_partition);
     }
-    result.reserve(scored.size());
-    for (const auto& candidate : scored) {
-        result.push_back({candidate.partition, candidate.metrics.cutsize, candidate.metrics.balance});
-    }
-    return result;
+    return materialize_tree_candidates(hypergraph, candidates, options.num_parts);
 }
 
 std::vector<TreePartitionCandidate> tree_partition(const Hypergraph& hypergraph,
                                                    const TreePartitionOptions& options,
                                                    const std::vector<int>& base_partition,
-                                                   std::mt19937& rng,
+                                                   AlgorithmRng& rng,
                                                    const Eigen::MatrixXd& constraint_basis) {
     if (hypergraph.num_vertices == 0) {
         return {};
@@ -1121,12 +1340,12 @@ std::vector<TreePartitionCandidate> tree_partition(const Hypergraph& hypergraph,
         return {{{part}, 0, {hypergraph.vwts[0]}}};
     }
 
-    WeightedGraph graph = hypergraph_to_graph(hypergraph, options.cycles, rng);
+    WeightedGraph graph = hypergraph_to_graph(hypergraph, options.cycles, options.seed, &rng);
     const PartitionIndex fixed_vertices = partition_index_from_fixed(hypergraph);
     Eigen::MatrixXd embedding;
     if (options.num_parts > 2 && partition_has_all_parts(base_partition, options.num_parts)) {
         embedding = build_k_way_embedding_from_partition(
-            hypergraph, graph, base_partition, options, constraint_basis);
+            hypergraph, graph, base_partition, options, constraint_basis, &rng);
     } else {
         const int dims = options.num_parts == 2
             ? std::max(1, std::min(hypergraph.num_vertices - 1, std::max(1, options.eigvecs)))
@@ -1134,7 +1353,7 @@ std::vector<TreePartitionCandidate> tree_partition(const Hypergraph& hypergraph,
         const int epsilon = options.num_parts == 2 ? 1 : std::max(1, options.num_parts - 1);
         embedding =
             solve_eigs(hypergraph, graph, fixed_vertices, false, dims, options.solver_iters, epsilon,
-                       options.seed, constraint_basis);
+                       options.seed, constraint_basis, options.log_lobpcg, &rng);
     }
     return tree_partition_with_embedding(hypergraph, graph, embedding, fixed_vertices, options, base_partition, rng);
 }
@@ -1145,7 +1364,7 @@ std::vector<int> tree_partition_best_with_embedding(const Hypergraph& hypergraph
                                                     const PartitionIndex& fixed_vertices,
                                                     const TreePartitionOptions& options,
                                                     const std::vector<int>& base_partition,
-                                                    std::mt19937& rng) {
+                                                    AlgorithmRng& rng) {
     const BalanceLimits limits = compute_balance_limits(hypergraph, options.num_parts, options.imb);
     std::vector<TreePartitionCandidate> candidates = tree_partition_with_embedding(hypergraph, graph, embedding, fixed_vertices, options, base_partition, rng);
 
@@ -1177,7 +1396,7 @@ std::vector<int> tree_partition_best_with_embedding(const Hypergraph& hypergraph
 std::vector<int> tree_partition_best(const Hypergraph& hypergraph,
                                      const TreePartitionOptions& options,
                                      const std::vector<int>& base_partition,
-                                     std::mt19937& rng,
+                                     AlgorithmRng& rng,
                                      const Eigen::MatrixXd& constraint_basis) {
     const BalanceLimits limits = compute_balance_limits(hypergraph, options.num_parts, options.imb);
     std::vector<TreePartitionCandidate> candidates =
@@ -1215,7 +1434,7 @@ std::vector<int> partition_two_way_hypergraph(const Hypergraph& hypergraph,
                                               int cycles,
                                               int best_solns,
                                               const std::vector<int>& base_partition,
-                                              std::mt19937& rng,
+                                              AlgorithmRng& rng,
                                               const Eigen::MatrixXd& constraint_basis) {
     TreePartitionOptions options;
     options.num_parts = 2;
@@ -1235,7 +1454,7 @@ std::vector<int> partition_k_way_hypergraph(const Hypergraph& hypergraph,
                                             int cycles,
                                             int best_solns,
                                             const std::vector<int>& base_partition,
-                                            std::mt19937& rng,
+                                            AlgorithmRng& rng,
                                             ProjectionStrategy projection_strategy,
                                             const Eigen::MatrixXd& constraint_basis) {
     TreePartitionOptions options;

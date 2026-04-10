@@ -14,4 +14,6 @@ export https_proxy=
 export HTTP_PROXY=
 export HTTPS_PROXY=
 
-exec julia --project="${REPO_ROOT}/julia_ref_env" "${SCRIPT_DIR}/run_julia_specpart.jl" "$@"
+JULIA_PROJECT_ROOT=${K_SPECPART_JULIA_PROJECT:-"${REPO_ROOT}/julia_ref_env"}
+
+exec julia --project="${JULIA_PROJECT_ROOT}" "${SCRIPT_DIR}/run_julia_specpart.jl" "$@"

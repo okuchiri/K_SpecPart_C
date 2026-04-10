@@ -1,7 +1,13 @@
 #include "kspecpart/graphification.hpp"
 
+#include "kspecpart/julia_random.hpp"
+
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <numeric>
 #include <unordered_map>
 #include <vector>
 
@@ -9,11 +15,42 @@ namespace kspecpart {
 
 namespace {
 
+void maybe_dump_graph_debug(const WeightedGraph& graph) {
+    const char* raw_path = std::getenv("K_SPECPART_DEBUG_GRAPH_PATH");
+    if (raw_path == nullptr || raw_path[0] == '\0') {
+        return;
+    }
+
+    std::ofstream out(raw_path);
+    if (!out) {
+        return;
+    }
+    out << std::setprecision(17);
+
+    int undirected_edges = 0;
+    for (int u = 0; u < graph.num_vertices; ++u) {
+        for (const auto& [v, weight] : graph.adjacency[u]) {
+            if (u < v && weight != 0.0) {
+                undirected_edges += 1;
+            }
+        }
+    }
+
+    out << graph.num_vertices << ' ' << undirected_edges << '\n';
+    for (int u = 0; u < graph.num_vertices; ++u) {
+        for (const auto& [v, weight] : graph.adjacency[u]) {
+            if (u < v && weight != 0.0) {
+                out << u << ' ' << v << ' ' << weight << '\n';
+            }
+        }
+    }
+}
+
 void add_undirected_edge(std::vector<std::unordered_map<int, double>>& accum,
                          int u,
                          int v,
                          double weight) {
-    if (u == v || weight == 0.0) {
+    if (weight == 0.0) {
         return;
     }
     accum[u][v] += weight;
@@ -22,10 +59,15 @@ void add_undirected_edge(std::vector<std::unordered_map<int, double>>& accum,
 
 }  // namespace
 
-WeightedGraph hypergraph_to_graph(const Hypergraph& hypergraph, int cycles, std::mt19937& rng) {
+WeightedGraph hypergraph_to_graph(const Hypergraph& hypergraph,
+                                  int cycles,
+                                  int seed,
+                                  AlgorithmRng* shared_rng) {
     const int n = hypergraph.num_vertices;
     std::vector<std::unordered_map<int, double>> accum(n);
     cycles = std::max(1, cycles);
+    AlgorithmRng local_rng(seed);
+    AlgorithmRng& rng = shared_rng == nullptr ? local_rng : *shared_rng;
 
     for (int edge = 0; edge < hypergraph.num_hyperedges; ++edge) {
         const int start = hypergraph.eptr[edge];
@@ -53,11 +95,16 @@ WeightedGraph hypergraph_to_graph(const Hypergraph& hypergraph, int cycles, std:
         const double scale = (std::floor(size / 2.0) * std::ceil(size / 2.0)) / static_cast<double>(size - 1);
         const double cycle_weight = edge_weight / (static_cast<double>(cycles) * 2.0 * scale);
         for (int cycle = 0; cycle < cycles; ++cycle) {
-            std::shuffle(pins.begin(), pins.end(), rng);
+            const std::vector<int> order = rng.randperm_zero_based(size);
             for (int i = 0; i + 1 < size; ++i) {
-                add_undirected_edge(accum, pins[i], pins[i + 1], cycle_weight);
+                add_undirected_edge(accum, pins[order[i]], pins[order[i + 1]], cycle_weight);
             }
-            add_undirected_edge(accum, pins.back(), pins.front(), cycle_weight);
+            // Match Julia graphification.jl literally: the cycle-closing edge is
+            // indexed through the global eind array instead of the local hedge slice.
+            add_undirected_edge(accum,
+                                hypergraph.eind[order.back()],
+                                hypergraph.eind[order.front()],
+                                cycle_weight);
         }
     }
 
@@ -75,6 +122,7 @@ WeightedGraph hypergraph_to_graph(const Hypergraph& hypergraph, int cycles, std:
                   graph.adjacency[vertex].end(),
                   [](const auto& lhs, const auto& rhs) { return lhs.first < rhs.first; });
     }
+    maybe_dump_graph_debug(graph);
     return graph;
 }
 

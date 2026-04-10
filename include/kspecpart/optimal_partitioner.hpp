@@ -29,6 +29,14 @@ struct OptimalPartitionerResult {
 
 std::optional<std::string> resolve_hmetis_executable(const std::string& configured_path);
 std::optional<std::string> resolve_ilp_partitioner_executable(const std::string& configured_path);
+std::optional<std::vector<int>> run_hmetis_initial_partition(const Hypergraph& hypergraph,
+                                                             const std::string& executable,
+                                                             int num_parts,
+                                                             int imb,
+                                                             const std::string& work_prefix,
+                                                             int runs = 10);
+std::optional<std::string> optimal_partitioner_skip_reason(const Hypergraph& hypergraph,
+                                                           const OptimalPartitionerOptions& options);
 std::optional<OptimalPartitionerResult> run_optimal_partitioner(const Hypergraph& hypergraph,
                                                                 const OptimalPartitionerOptions& options,
                                                                 const std::string& work_prefix);
