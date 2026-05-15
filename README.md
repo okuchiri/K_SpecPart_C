@@ -166,7 +166,7 @@ export K_SPECPART_TRITON_PATH=/path/to/openroad
 - `/home/norising/K_SpecPart_C/.external_build/ilp_part/ilp_part`
 - `/home/norising/K_SpecPart/ilp_partitioner/build/ilp_part`
 
-从当前构建痕迹看，ILP 可执行文件并不由本仓库直接生成，而是来自外部 `ilp_partitioner` 工程，且通常依赖：
+ILP 可执行文件并不由本仓库直接生成，而是来自外部 `ilp_partitioner` 工程，且通常依赖：
 
 - OR-Tools
 - CPLEX
@@ -175,7 +175,7 @@ export K_SPECPART_TRITON_PATH=/path/to/openroad
 
 1. 对 C++ 主程序使用 `--disable-ilp`。
 2. 对 benchmark 保留默认设置，让脚本记录该工具不可用或回退行为。
-3. 自行准备外部 ILP 工程，并把 `ilp_part` 放到上面两个默认路径之一，或修改 wrapper 路径。
+3. 自行准备外部 ILP 工程，并把 `ilp_part` 放到上面两个默认路径之一，或修改 wrapper 路径，建议参考原Julia仓库给出的说明获取该外部工具和hMETIS。
 
 ### 6.4 KaHyPar
 
